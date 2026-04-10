@@ -2,7 +2,34 @@
 
 ## 概述
 
-rent-ops 是一个 Claude Code Skill，将 AI Agent 变成你的租房助手。核心能力：主动扫描各平台房源、智能评估打分、跨平台去重、风险预警、看房准备。
+rent-ops 是一个 Claude Code Skill，将 AI Agent 变成你的租房助手。核心能力：主动扫描各平台房源、智能评估打分、跨平台去重、高德地图可视化、风险预警、看房准备。
+
+## 环境依赖
+
+### 必须
+
+| 依赖 | 用途 | 安装 |
+|------|------|------|
+| Python 3.9+ | 爬虫脚本运行 | macOS 自带或 `brew install python` |
+| Playwright | 浏览器自动化（豆瓣爬虫） | `pip3 install playwright && playwright install chromium` |
+| playwright-stealth | 反检测补丁 | `pip3 install playwright-stealth` |
+
+### 推荐（增强功能）
+
+| 依赖 | 用途 | 安装 |
+|------|------|------|
+| MediaCrawler | 小红书爬虫 | `git clone https://github.com/NanmiCoder/MediaCrawler` + `pip install -r requirements.txt`（需 Python 3.11）|
+| gstack browse | Arc 浏览器 cookie 导出 | Claude Code 插件，需单独安装 |
+| 高德地图 API Key | 地图可视化 + POI 搜索 | 在 [console.amap.com](https://console.amap.com) 注册，创建「Web端(JS API)」类型的 Key |
+| Arc 浏览器 | CDP 模式（最强反检测） | [arc.net](https://arc.net) |
+
+### 用户需要做的事
+
+1. **首次运行 `/rent`** — 系统会引导你填写租房需求（城市、预算、户型、红线），生成 `config/profile.yml`
+2. **高德地图** — 如需使用 `/rent map`，需在 `data/map-view.html` 中替换 API Key 和安全密钥（搜索 `_AMapSecurityConfig` 和 `key=`）
+3. **豆瓣爬虫** — 需要有豆瓣账号并加入目标租房小组；Arc 浏览器中登录过豆瓣（用于 cookie 导出）
+4. **小红书爬虫** — 首次运行 MediaCrawler 需手机扫码登录小红书；后续复用 session
+5. **地图查看** — `cd data && python3 -m http.server 8765`，打开 `http://localhost:8765/map-view.html`
 
 ## 数据契约
 

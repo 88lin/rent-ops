@@ -72,8 +72,13 @@ args: mode
 
 额外读取 `data/listings.md` 获取已有房源信息。
 
+### 需要 _shared.md + _profile.md + mode 文件 + platforms.yml：
+- `scrape`
+
+额外读取 `platforms.yml` 获取爬虫配置和运行命令。
+
 ### 独立 mode（只读自己的 mode 文件）：
-- `tracker`, `risk`
+- `tracker`, `risk`, `map`
 
 ---
 
