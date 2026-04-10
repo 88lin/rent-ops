@@ -1,7 +1,13 @@
 # User data (never commit)
 data/*.md
 data/*.tsv
+data/*.jsonl
+data/*.json
 !data/.gitkeep
+
+# Keep system-layer HTML templates
+!data/map-view.html
+!data/listings-view.html
 
 # Reports (never commit)
 reports/*.md
@@ -11,6 +17,11 @@ reports/*.md
 config/profile.yml
 modes/_profile.md
 platforms.yml
+
+# Session / cache
+data/douban_session.json
+__pycache__/
+*.pyc
 
 # OS
 .DS_Store

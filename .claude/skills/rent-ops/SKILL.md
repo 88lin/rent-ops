@@ -19,6 +19,8 @@ args: mode
 | `tracker` | `tracker` |
 | `risk` | `risk` |
 | `visit` | `visit` |
+| `map` | `map` — 打开地图可视化 |
+| `scrape` | `scrape` — 执行豆瓣/小红书爬虫 |
 | `compare` | 提示「v0.2 开发中」 |
 | `negotiate` | 提示「v0.2 开发中」 |
 | `batch` | 提示「v0.2 开发中」 |
@@ -39,7 +41,9 @@ args: mode
 可用命令：
 
 /rent {粘贴链接}          → 自动评估（抓取 + 打分 + 风险扫描 + 入 tracker）
-/rent scan               → 主动扫描各平台找房
+/rent scan               → 主动扫描各平台找房（WebSearch/Playwright）
+/rent scrape             → 执行豆瓣/小红书爬虫（Playwright stealth + MediaCrawler）
+/rent map                → 打开高德地图可视化（所有房源定位展示）
 /rent tracker            → 查看/管理房源跟踪表
 /rent risk {小区名}       → 搜集该小区避雷信息
 /rent visit              → 看房准备（路线 + checklist + 砍价话术）

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深圳租房地图</title>
+<script>
+window._AMapSecurityConfig = { securityJsCode: 'bb2785b7b4e6c884a1051a3da144f6d9' };
+</script>
+<script src="https://webapi.amap.com/maps?v=2.0&key=457df6be93afc3d45a89c337ca5a4818&plugin=AMap.InfoWindow,AMap.Scale,AMap.ToolBar,AMap.PlaceSearch,AMap.Geocoder"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif; }
+
+  #header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+    background: rgba(20,20,22,0.92);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    padding: 12px 20px; display: flex; align-items: center; gap: 16px;
+  }
+  #header h1 { font-size: 16px; font-weight: 600; color: #fff; white-space: nowrap; }
+  #header p  { font-size: 12px; color: #888; }
+  #count-pill {
+    margin-left: auto; background: #0071e3; color: #fff;
+    font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 20px; white-space: nowrap;
+  }
+
+  #filters {
+    position: fixed; top: 56px; left: 0; right: 0; z-index: 200;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    padding: 8px 16px; display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+  }
+  #filters::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0; padding: 5px 12px; border-radius: 20px;
+    border: 1px solid #d2d2d7; background: #fff;
+    cursor: pointer; font-size: 12px; font-weight: 500;
+    transition: all 0.15s; color: #333;
+  }
+  .chip:hover { border-color: #999; }
+  .chip.active { border-color: transparent; color: #fff; }
+  .chip[data-f="all"].active    { background: #1d1d1f; }
+  .chip[data-f="后海"].active   { background: #0071e3; }
+  .chip[data-f="前海"].active   { background: #34a853; }
+  .chip[data-f="科技园"].active { background: #f5a623; }
+  .chip[data-f="南油"].active   { background: #9b59b6; }
+  .chip[data-f="南山"].active   { background: #00bcd4; }
+  .chip[data-f="蛇口"].active   { background: #795548; }
+  .chip[data-f="深圳湾"].active { background: #ff5722; }
+  .chip[data-f="7k"].active     { background: #00897b; }
+  .chip[data-f="xhs"].active    { background: #ff2442; }
+  .chip[data-f="douban"].active { background: #2e7d32; }
+
+  #map { position: fixed; top: 0; left: 0; right: 0; bottom: 0; }
+
+  #panel {
+    position: fixed; right: 0; top: 0; bottom: 0; width: 340px; z-index: 300;
+    background: #fff; box-shadow: -4px 0 24px rgba(0,0,0,0.12);
+    transform: translateX(100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  #panel.open { transform: translateX(0); }
+  #panel-close {
+    position: absolute; top: 14px; right: 14px;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(0,0,0,0.06); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: #555;
+  }
+  #panel-close:hover { background: rgba(0,0,0,0.12); }
+  #panel-body { padding: 24px 20px 20px; overflow-y: auto; flex: 1; }
+
+  .panel-badge {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    padding: 3px 8px; border-radius: 6px; margin-bottom: 10px;
+  }
+  .pb-安居客 { background: #fff3e0; color: #e65100; }
+  .pb-房天下 { background: #e8f5e9; color: #2e7d32; }
+  .pb-小红书 { background: #fce4ec; color: #c62828; }
+  .pb-豆瓣   { background: #e8eaf6; color: #283593; }
+
+  .panel-rec {
+    display: inline-flex; font-size: 11px; background: #0071e3; color: #fff;
+    padding: 3px 8px; border-radius: 6px; margin-bottom: 10px; margin-left: 4px;
+  }
+  .panel-name { font-size: 20px; font-weight: 700; color: #1d1d1f; line-height: 1.2; margin-bottom: 4px; }
+  .panel-price { font-size: 30px; font-weight: 700; color: #1d1d1f; margin: 8px 0; }
+  .panel-price .unit { font-size: 14px; color: #86868b; font-weight: 400; }
+  .panel-tba { font-size: 20px; color: #86868b; margin: 8px 0; }
+  .panel-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .ptag { font-size: 12px; padding: 3px 9px; border-radius: 6px; background: #f5f5f7; color: #515154; }
+  .ptag.direct { background: #e8f5e9; color: #1b5e20; font-weight: 600; }
+  .panel-desc { font-size: 13px; color: #515154; line-height: 1.6; margin-bottom: 14px; word-break: break-all; }
+  .panel-dist { font-size: 12px; color: #86868b; margin-bottom: 16px; }
+  .panel-dist b { color: #0071e3; }
+  .panel-btn {
+    display: block; text-align: center; padding: 12px;
+    background: #0071e3; color: #fff; border-radius: 10px;
+    font-size: 14px; font-weight: 600; text-decoration: none;
+  }
+  .panel-btn:hover { background: #005bb5; }
+  .panel-btn.disabled { background: #f5f5f7; color: #86868b; pointer-events: none; }
+
+  .m-dot {
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    border: 2px solid #fff; transition: transform 0.15s; white-space: nowrap;
+  }
+  .m-dot:hover { transform: scale(1.15); }
+  .m-dot.big { width: 36px; height: 36px; font-size: 11px; border-width: 3px; }
+  .m-dot.sm  { width: 28px; height: 28px; font-size: 10px; }
+
+  .work-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+  .work-pulse {
+    position: absolute; border-radius: 50%; opacity: 0;
+    animation: ripple 2s ease-out infinite;
+  }
+  @keyframes ripple {
+    0%   { width:20px; height:20px; opacity:0.6; background:rgba(255,59,48,0.5); }
+    100% { width:56px; height:56px; opacity:0; background:rgba(255,59,48,0); }
+  }
+  .work-core {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: #ff3b30; border: 3px solid #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; box-shadow: 0 2px 8px rgba(255,59,48,0.5); z-index: 1;
+  }
+
+  #legend {
+    position: fixed; left: 16px; bottom: 36px; z-index: 200;
+    background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);
+    border-radius: 12px; padding: 12px 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12); font-size: 12px;
+  }
+  .leg-row { display: flex; align-items: center; gap: 7px; line-height: 1.9; color: #333; }
+  .leg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .leg-hint { font-size: 11px; color: #999; margin-top: 6px; border-top: 1px solid #f0f0f0; padding-top: 6px; }
+
+  #geo-status {
+    position: fixed; bottom: 12px; right: 16px; z-index: 200;
+    font-size: 11px; color: #86868b; background: rgba(255,255,255,0.9);
+    padding: 4px 10px; border-radius: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div>
+    <h1>深圳租房地图</h1>
+    <p>工作地: 深圳湾口岸 · 8000元 · 整租两室</p>
+  </div>
+  <div id="count-pill">-- 套</div>
+</div>
+
+<div id="filters">
+  <div class="chip active" data-f="all"    onclick="doFilter('all',this)">全部</div>
+  <div class="chip" data-f="后海"   onclick="doFilter('后海',this)">后海</div>
+  <div class="chip" data-f="南油"   onclick="doFilter('南油',this)">南油</div>
+  <div class="chip" data-f="蛇口"   onclick="doFilter('蛇口',this)">蛇口</div>
+  <div class="chip" data-f="深圳湾" onclick="doFilter('深圳湾',this)">深圳湾</div>
+  <div class="chip" data-f="前海"   onclick="doFilter('前海',this)">前海</div>
+  <div class="chip" data-f="科技园" onclick="doFilter('科技园',this)">科技园</div>
+  <div class="chip" data-f="7k"     onclick="doFilter('7k',this)">7000元</div>
+  <div class="chip" data-f="xhs"    onclick="doFilter('xhs',this)">小红书</div>
+  <div class="chip" data-f="douban"  onclick="doFilter('douban',this)">豆瓣</div>
+</div>
+
+<div id="map"></div>
+
+<div id="panel">
+  <button id="panel-close" onclick="closePanel()">✕</button>
+  <div id="panel-body"></div>
+</div>
+
+<div id="legend">
+  <div class="leg-row"><span class="leg-dot" style="background:#ff3b30"></span>深圳湾口岸（工作地）</div>
+  <div class="leg-row"><span class="leg-dot" style="background:#0071e3"></span>后海</div>
+  <div class="leg-row"><span class="leg-dot" style="background:#9b59b6"></span>南油</div>
+  <div class="leg-row"><span class="leg-dot" style="background:#795548"></span>蛇口</div>
+  <div class="leg-row"><span class="leg-dot" style="background:#ff5722"></span>深圳湾</div>
+  <div class="leg-row"><span class="leg-dot" style="background:#34a853"></span>前海</div>
+  <div class="leg-row"><span class="leg-dot" style="background:#f5a623"></span>科技园</div>
+  <div class="leg-hint">数字 = 月租(千元) · 大圈 = 有价格</div>
+</div>
+
+<div id="geo-status"></div>
+
+<script>
+const WORK = [113.9445, 22.5195];
+const areaColor = {
+  '后海':'#0071e3','前海':'#34a853','科技园':'#f5a623',
+  '南油':'#9b59b6','南山':'#00bcd4','蛇口':'#795548',
+  '深圳湾':'#ff5722','桃源':'#f5a623','湾厦':'#9b59b6','登良':'#0071e3',
+};
+
+// ── 原有精选房源（安居客/房天下 - 已有精确坐标）──
+const legacyListings = [
+  { name:'弘都世纪公寓', platform:'安居客', area:'后海', pos:[113.9378,22.5268], price:7100, rooms:'2室2厅', size:'68㎡', metro:'湾厦站', desc:'精装 近育才四小', url:null, rec:true },
+  { name:'弘都世纪公寓', platform:'安居客', area:'后海', pos:[113.9382,22.5270], price:7300, rooms:'2室2厅', size:'68㎡', metro:'湾厦站', desc:'蛇口海域地铁旁精装复式两房', url:null, rec:false },
+  { name:'天海花园', platform:'安居客', area:'后海', pos:[113.9437,22.5295], price:7500, rooms:'3室2厅', size:'90㎡', metro:'后海', desc:'免中介费 空房 粤琴一路22号', url:null, rec:false },
+  { name:'天海花园', platform:'安居客', area:'后海', pos:[113.9441,22.5299], price:7000, rooms:'3室2厅', size:'92㎡', metro:'后海', desc:'92平三房', url:null, rec:false },
+  { name:'海洋之心', platform:'安居客', area:'后海', pos:[113.9498,22.5342], price:7900, rooms:'3室2厅', size:'89㎡', metro:'后海站', desc:'带独立露台 3大阳台 采光好', url:null, rec:false },
+  { name:'招商名仕花园', platform:'房天下', area:'后海', pos:[113.9318,22.5215], price:6500, rooms:'2室2厅', size:'80㎡', metro:'登良站498m', desc:'南北通透 全配 首次放租', url:'https://sz.zu.fang.com/chuzu/3_247179561_1.htm', rec:true },
+  { name:'观海台', platform:'房天下', area:'后海', pos:[113.9421,22.5315], price:8000, rooms:'2室2厅', size:'82㎡', metro:'后海站444m', desc:'精装朝南 近海岸城', url:'https://sz.zu.fang.com/chuzu/3_243445669_1.htm', rec:false },
+  { name:'后海花园', platform:'房天下', area:'后海', pos:[113.9258,22.5180], price:5000, rooms:'2室1厅', size:'84㎡', metro:'南油站704m', desc:'东南朝向 性价比', url:'https://sz.zu.fang.com/chuzu/8_1006544129_1.htm', rec:false },
+  { name:'瑞铧苑', platform:'房天下', area:'后海', pos:[113.9308,22.5228], price:6400, rooms:'2室2厅', size:'56㎡', metro:'登良站638m', desc:'朝南', url:'https://sz.zu.fang.com/chuzu/8_1008028613_1.htm', rec:false },
+  { name:'后海名苑居', platform:'房天下', area:'后海', pos:[113.9468,22.5308], price:6800, rooms:'2室2厅', size:'81㎡', metro:'后海', desc:'东南朝向', url:'https://sz.zu.fang.com/chuzu/8_1005932870_1.htm', rec:false },
+  { name:'云海天城世家', platform:'房天下', area:'后海', pos:[113.9272,22.5190], price:6930, rooms:'2室1厅', size:'75㎡', metro:'南油站719m', desc:'朝西', url:'https://sz.zu.fang.com/chuzu/8_1008342883_1.htm', rec:false },
+  { name:'漾日湾畔', platform:'房天下', area:'后海', pos:[113.9432,22.5328], price:8000, rooms:'2室2厅', size:'74㎡', metro:'后海站311m', desc:'朝西', url:'https://sz.zu.fang.com/chuzu/8_1008305517_1.htm', rec:false },
+  { name:'海境界家园', platform:'小红书', area:'后海', pos:[113.9362,22.5256], price:null, rooms:'2室2厅', size:'74㎡', metro:'湾厦站600m', desc:'全南朝向双阳台 业主直租免中介', direct:true, url:'https://www.xiaohongshu.com/explore/6693c62d0000000025014056', rec:true },
+  { name:'前海时代', platform:'安居客', area:'前海', pos:[113.8988,22.5168], price:8000, rooms:'2室2厅', size:'87㎡', metro:'前海', desc:'南北通透 客厅出阳台', url:null, rec:false },
+  { name:'前海花园', platform:'安居客', area:'前海', pos:[113.8936,22.5398], price:7800, rooms:'3室2厅', size:'93㎡', metro:'前海', desc:'精装南向 家电齐全', url:null, rec:false },
+  { name:'中爱花园', platform:'安居客', area:'科技园', pos:[113.9305,22.5733], price:6500, rooms:'2室2厅', size:'77㎡', metro:'龙珠七路', desc:'南向正规大两房 地铁口', url:null, rec:false },
+  { name:'麒麟花园', platform:'安居客', area:'科技园', pos:[113.9238,22.5465], price:6250, rooms:'2室1厅', size:'70㎡', metro:'南头', desc:'电梯两房 南北通透', url:null, rec:false },
+  { name:'京基御景峯', platform:'安居客', area:'科技园', pos:[113.9725,22.5985], price:6800, rooms:'3室2厅', size:'90㎡', metro:'北站', desc:'精装 近北站 车位充足', url:null, rec:false },
+  { name:'西湖林语', platform:'安居客', area:'科技园', pos:[113.9668,22.5925], price:7200, rooms:'3室2厅', size:'79㎡', metro:'大学城', desc:'精装修全齐拎包入住', url:null, rec:false },
+];
+
+const map = new AMap.Map('map', { zoom: 13, center: WORK, mapStyle: 'amap://styles/normal', viewMode: '2D' });
+map.addControl(new AMap.Scale({ position: 'LB' }));
+
+new AMap.Marker({
+  position: WORK, offset: new AMap.Pixel(-18, -18),
+  content: '<div class="work-wrap"><div class="work-pulse"></div><div class="work-core">🏢</div></div>',
+  zIndex: 200,
+}).addTo(map);
+
+function distKm(p1, p2) {
+  const R = 6371, dLat = (p2[1]-p1[1])*Math.PI/180, dLng = (p2[0]-p1[0])*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(p1[1]*Math.PI/180)*Math.cos(p2[1]*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+const markerObjs = [];
+
+function addMarker(l) {
+  const color = areaColor[l.area] || '#666';
+  const hasPrice = l.price && l.price > 0;
+  const label = hasPrice ? (l.price/1000).toFixed(1)+'k' : '?';
+  const cls = hasPrice ? 'big' : 'sm';
+  const pos = l.pos || [l.lng, l.lat];
+
+  const m = new AMap.Marker({
+    position: pos,
+    offset: new AMap.Pixel(hasPrice ? -18 : -14, hasPrice ? -18 : -14),
+    content: `<div class="m-dot ${cls}" style="background:${color}">${label}</div>`,
+    zIndex: hasPrice ? 120 : 100,
+  });
+  m.on('click', () => openPanel(l));
+  m.addTo(map);
+  m._data = l;
+  markerObjs.push(m);
+  return m;
+}
+
+// 加载精选数据
+legacyListings.forEach(l => addMarker(l));
+updateCount();
+
+// ── 高德 PlaceSearch 地理编码 ──
+const placeSearch = new AMap.PlaceSearch({ city: '深圳', citylimit: true, pageSize: 1 });
+const geocoder = new AMap.Geocoder({ city: '深圳' });
+
+// 从标题/描述提取搜索关键词
+function extractSearchTerm(item) {
+  const text = item.title || '';
+  // 尝试提取小区名（X花园/X大厦/X公寓 等）
+  const suffixes = '花园|天城|大厦|中心|公寓|世家|广场|名苑|雅苑|公馆|翠园|家园|华庭|林语|新村|湾畔|峰|峯|苑|阁|庭|台|府|寓|堡|岸|境界|名城|城邦|名府|壹号';
+  const re = new RegExp(`([\\u4e00-\\u9fff]{2,6}(?:${suffixes}))`, 'g');
+  const matches = text.match(re);
+  if (matches) {
+    // 过滤无意义匹配
+    const bad = new Set(['酒店式公寓','花园小区','花园社区','老小区']);
+    const good = matches.find(m => !bad.has(m));
+    if (good) return '深圳南山' + good;
+  }
+  // 降级：用区域名 + 标题前几个汉字
+  const area = item.area || '';
+  // 尝试提取地铁站等地标
+  const metroMatch = text.match(/([\u4e00-\u9fff]{2,4}(?:地铁站|站旁|路))/);
+  if (metroMatch) return '深圳南山' + metroMatch[1];
+  return '深圳南山' + area;
+}
+
+// 逐个地理编码（限速 100ms 间隔）
+async function geocodeListings(items) {
+  const statusEl = document.getElementById('geo-status');
+  const existUrls = new Set(legacyListings.filter(l=>l.url).map(l=>l.url));
+  let done = 0, total = items.length;
+
+  for (const item of items) {
+    if (existUrls.has(item.url)) { done++; continue; }
+
+    const searchTerm = extractSearchTerm(item);
+    statusEl.textContent = `定位中 ${done}/${total}: ${searchTerm}`;
+
+    try {
+      const pos = await new Promise((resolve) => {
+        placeSearch.search(searchTerm, (status, result) => {
+          if (status === 'complete' && result.poiList && result.poiList.pois.length > 0) {
+            const poi = result.poiList.pois[0];
+            resolve([poi.location.lng, poi.location.lat]);
+          } else {
+            resolve(null);
+          }
+        });
+      });
+
+      const listing = {
+        name: item.community || item.title.slice(0, 12),
+        platform: item.platform,
+        area: item.area,
+        pos: pos || areaFallback(item.area),
+        price: item.price || null,
+        rooms: item.room,
+        size: null, metro: null,
+        desc: item.title,
+        url: item.url,
+        rec: false,
+        geocoded: !!pos,
+      };
+      addMarker(listing);
+    } catch(e) {
+      console.warn('Geocode error:', searchTerm, e);
+    }
+
+    done++;
+    await sleep(150);
+  }
+
+  statusEl.textContent = `定位完成: ${markerObjs.length} 套`;
+  setTimeout(() => statusEl.textContent = '', 3000);
+  updateCount();
+}
+
+function areaFallback(area) {
+  const fallback = {
+    '后海':[113.9401,22.5268],'南油':[113.9196,22.5130],'前海':[113.8988,22.5250],
+    '科技园':[113.9480,22.5480],'深圳湾':[113.9500,22.5100],'蛇口':[113.9100,22.4900],
+    '湾厦':[113.9350,22.5100],'登良':[113.9300,22.5200],'南山':[113.9300,22.5350],
+    '桃源':[113.9380,22.5650],
+  };
+  const base = fallback[area] || [113.93, 22.53];
+  return [base[0] + (Math.random()-0.5)*0.006, base[1] + (Math.random()-0.5)*0.004];
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// 加载 listings.json 并地理编码
+fetch('listings.json')
+  .then(r => r.json())
+  .then(data => geocodeListings(data))
+  .catch(e => console.warn('Load listings.json failed:', e));
+
+function updateCount() {
+  document.getElementById('count-pill').textContent = markerObjs.length + ' 套';
+}
+
+// ── 详情面板 ──
+function openPanel(l) {
+  const pos = l.pos;
+  const dist = distKm(WORK, pos);
+  const distTxt = dist < 1 ? `约 ${Math.round(dist*1000)} m` : `约 ${dist.toFixed(1)} km`;
+
+  const priceHtml = l.price
+    ? `<div class="panel-price">${l.price.toLocaleString()}<span class="unit"> 元/月</span></div>`
+    : `<div class="panel-tba">价格待询</div>`;
+
+  const tags = [
+    l.rooms ? `<span class="ptag">${l.rooms}</span>` : '',
+    l.size ? `<span class="ptag">${l.size}</span>` : '',
+    l.metro ? `<span class="ptag">${l.metro}</span>` : '',
+    l.direct ? `<span class="ptag direct">🏠 房东直租</span>` : '',
+  ].join('');
+
+  const btn = l.url
+    ? `<a class="panel-btn" href="${l.url}" target="_blank">查看原帖 →</a>`
+    : `<a class="panel-btn disabled">暂无链接（${l.platform}）</a>`;
+
+  document.getElementById('panel-body').innerHTML = `
+    <div>
+      <span class="panel-badge pb-${l.platform}">${l.platform}</span>
+      ${l.rec ? '<span class="panel-rec">推荐</span>' : ''}
+      ${l.geocoded === false ? '<span style="font-size:11px;color:#999;margin-left:4px">大致位置</span>' : ''}
+    </div>
+    <div class="panel-name">${l.name}</div>
+    ${priceHtml}
+    <div class="panel-tags">${tags}</div>
+    <div class="panel-desc">${l.desc || ''}</div>
+    <div class="panel-dist">📍 距深圳湾口岸（直线）<b>${distTxt}</b></div>
+    ${btn}
+  `;
+  document.getElementById('panel').classList.add('open');
+  map.panTo(pos);
+}
+
+function closePanel() { document.getElementById('panel').classList.remove('open'); }
+
+function doFilter(f, el) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  closePanel();
+  let count = 0;
+  markerObjs.forEach(m => {
+    const l = m._data;
+    const show =
+      f === 'all' ? true :
+      f === '7k' ? (l.price && l.price <= 7000) :
+      f === 'xhs' ? l.platform === '小红书' :
+      f === 'douban' ? l.platform === '豆瓣' :
+      l.area === f;
+    if (show) { m.show(); count++; } else m.hide();
+  });
+  document.getElementById('count-pill').textContent = count + ' 套';
+}
+
+map.on('click', closePanel);
+</script>
+</body>
+</html>

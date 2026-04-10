@@ -84,6 +84,46 @@ $B snapshot -i
 
 如果 API 调用失败或返回异常，静默回退到 L1 或跳过。不要因 API 问题中断整个扫描。
 
+## L2.5 — 专用爬虫扫描
+
+对有专用爬虫脚本的平台，优先使用：
+
+### 豆瓣（scripts/scrape_douban.py）
+
+```bash
+python3 scripts/scrape_douban.py --stealth
+```
+
+- 优先尝试 CDP 模式（接管 Arc 浏览器），降级为 playwright-stealth + Arc cookie 注入
+- 自动翻页浏览「深圳租房」小组最新帖子
+- 触发 misc/sorry 验证页时暂停等待人工过滑块
+- 输出：`data/douban_raw.jsonl` + `data/douban_filtered.jsonl`
+- 依赖：`pip install playwright playwright-stealth`
+
+### 小红书（MediaCrawler）
+
+```bash
+cd ~/code/MediaCrawler && /opt/homebrew/bin/python3.11 main.py --platform xhs --lt qrcode --type search
+```
+
+- 使用 xhshow 纯算法签名（无需浏览器中间件签名）
+- 有已保存的登录 session，通常不需要重新扫码
+- 关键配置（MediaCrawler/config/base_config.py）：
+  - `KEYWORDS`: 关键词用英文逗号分隔
+  - `CRAWLER_MAX_NOTES_COUNT = 20`：每组关键词抓取量
+  - `CRAWLER_MAX_SLEEP_SEC = 5`：请求间隔（降低风控）
+  - `ENABLE_GET_COMMENTS = False`：不抓评论减少请求量
+  - `SAVE_DATA_OPTION = "jsonl"`
+- 输出：`~/code/MediaCrawler/data/xhs/jsonl/search_contents_*.jsonl`
+
+### 数据整合
+
+爬虫完成后，需要将结果整合到 rent-ops：
+1. 读取 douban_filtered.jsonl + MediaCrawler 输出
+2. 按 INCLUDE/EXCLUDE/AREA 正则过滤
+3. 写入 `data/listings.md` 和 `data/listings.json`（地图用）
+4. 更新 `data/pipeline.md`（待评估队列）
+
 ## L3 — WebSearch 扫描
 
 对 strategy 包含 `websearch` 的平台：

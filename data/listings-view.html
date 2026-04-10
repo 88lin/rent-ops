@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深圳租房 Pipeline</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif; background: #f5f5f7; color: #1d1d1f; }
+
+  header { background: #1d1d1f; color: #fff; padding: 24px 32px; }
+  header h1 { font-size: 22px; font-weight: 600; }
+  header p { font-size: 13px; color: #86868b; margin-top: 4px; }
+
+  .stats { display: flex; gap: 24px; padding: 20px 32px; background: #fff; border-bottom: 1px solid #e5e5e5; flex-wrap: wrap; }
+  .stat { text-align: center; }
+  .stat .num { font-size: 28px; font-weight: 700; color: #0071e3; }
+  .stat .label { font-size: 12px; color: #86868b; margin-top: 2px; }
+
+  .filters { padding: 16px 32px; display: flex; gap: 8px; flex-wrap: wrap; background: #fff; border-bottom: 1px solid #e5e5e5; position: sticky; top: 0; z-index: 10; }
+  .filter-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid #d2d2d7; background: #fff; cursor: pointer; font-size: 13px; transition: all 0.15s; }
+  .filter-btn:hover, .filter-btn.active { background: #0071e3; color: #fff; border-color: #0071e3; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; padding: 24px 32px; }
+
+  .card { background: #fff; border-radius: 16px; padding: 20px; border: 1px solid #e5e5e5; transition: box-shadow 0.2s; position: relative; }
+  .card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.10); }
+  .card.highlight { border-color: #0071e3; }
+  .card.highlight::before { content: "⭐ 推荐"; position: absolute; top: 12px; right: 12px; font-size: 11px; background: #0071e3; color: #fff; padding: 2px 8px; border-radius: 10px; }
+
+  .card-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+  .platform-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; white-space: nowrap; flex-shrink: 0; }
+  .platform-anjuke { background: #fff3e0; color: #e65100; }
+  .platform-fangtianxia { background: #e8f5e9; color: #2e7d32; }
+  .platform-xiaohongshu { background: #fce4ec; color: #c62828; }
+  .platform-douban { background: #e8eaf6; color: #283593; }
+
+  .card-title { font-size: 16px; font-weight: 600; line-height: 1.3; }
+
+  .card-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .tag { font-size: 12px; padding: 3px 8px; border-radius: 6px; background: #f5f5f7; color: #515154; }
+  .tag.price { background: #fff8e1; color: #f57f17; font-weight: 600; }
+  .tag.area-tag { background: #e3f2fd; color: #0d47a1; }
+  .tag.size { background: #f3e5f5; color: #6a1b9a; }
+  .tag.cat { background: #fce4ec; color: #880e4f; font-weight: 600; }
+  .tag.rooms { background: #e0f2f1; color: #004d40; }
+
+  .card-desc { font-size: 13px; color: #515154; line-height: 1.5; margin-bottom: 12px; }
+
+  .card-footer { display: flex; align-items: center; justify-content: space-between; }
+  .contact { font-size: 12px; color: #86868b; }
+  .source-link { font-size: 12px; color: #0071e3; text-decoration: none; }
+  .source-link:hover { text-decoration: underline; }
+
+  .section-header { grid-column: 1 / -1; padding: 8px 0 4px; }
+  .section-header h2 { font-size: 15px; font-weight: 600; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e5e5; padding-bottom: 8px; }
+
+  .price-big { font-size: 22px; font-weight: 700; color: #1d1d1f; }
+  .price-unit { font-size: 13px; color: #86868b; }
+
+  .card-hidden { display: none; }
+
+  @media (max-width: 600px) {
+    .grid { padding: 16px; gap: 12px; }
+    header, .stats, .filters { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>深圳租房 Pipeline</h1>
+  <p>工作地: 深圳湾口岸 · 预算 ≤8000元 · 整租两室 · 大客厅 · 可养猫</p>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="num" id="total-count">26</div><div class="label">总房源</div></div>
+  <div class="stat"><div class="num">4</div><div class="label">平台来源</div></div>
+  <div class="stat"><div class="num">12</div><div class="label">后海片区</div></div>
+  <div class="stat"><div class="num" style="color:#2e7d32">5000</div><div class="label">最低月租</div></div>
+  <div class="stat"><div class="num" style="color:#c62828">8000</div><div class="label">最高预算</div></div>
+</div>
+
+<div class="filters">
+  <button class="filter-btn active" onclick="filterCards('all', this)">全部</button>
+  <button class="filter-btn" onclick="filterCards('后海', this)">后海片区</button>
+  <button class="filter-btn" onclick="filterCards('前海', this)">前海片区</button>
+  <button class="filter-btn" onclick="filterCards('科技园', this)">科技园/桃源村</button>
+  <button class="filter-btn" onclick="filterCards('南油', this)">南油/南头</button>
+  <button class="filter-btn" onclick="filterCards('cat', this)">🐱 可养猫</button>
+  <button class="filter-btn" onclick="filterCards('direct', this)">房东直租</button>
+  <button class="filter-btn" onclick="filterCards('budget7k', this)">≤7000元</button>
+</div>
+
+<div class="grid" id="card-grid">
+
+<!-- ===== 后海片区 ===== -->
+<div class="section-header"><h2>后海片区 — 最近深圳湾口岸</h2></div>
+
+<div class="card highlight" data-area="后海" data-price="7100" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-anjuke">安居客</span>
+    <div class="card-title">弘都世纪公寓</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">7100元/月</span>
+    <span class="tag rooms">2室2厅</span>
+    <span class="tag size">68㎡</span>
+    <span class="tag area-tag">湾厦站</span>
+  </div>
+  <div class="card-desc">精装 近育才四小 工业七路3号</div>
+  <div class="card-footer"><span class="contact">南山-后海</span></div>
+</div>
+
+<div class="card" data-area="后海" data-price="7300" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-anjuke">安居客</span>
+    <div class="card-title">弘都世纪公寓</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">7300元/月</span>
+    <span class="tag rooms">2室2厅</span>
+    <span class="tag size">68㎡</span>
+    <span class="tag area-tag">湾厦站</span>
+  </div>
+  <div class="card-desc">蛇口海域地铁旁精装复式两房</div>
+  <div class="card-footer"><span class="contact">南山-后海</span></div>
+</div>
+
+<div class="card" data-area="后海" data-price="7500" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-anjuke">安居客</span>
+    <div class="card-title">天海花园</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">7500元/月</span>
+    <span class="tag rooms">3室2厅</span>
+    <span class="tag size">90㎡</span>
+    <span class="tag area-tag">后海</span>
+  </div>
+  <div class="card-desc">免中介费 空房 3楼 粤琴一路22号</div>
+  <div class="card-footer"><span class="contact">南山-后海</span></div>
+</div>
+
+<div class="card" data-area="后海" data-price="7000" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-anjuke">安居客</span>
+    <div class="card-title">天海花园</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">7000元/月</span>
+    <span class="tag rooms">3室2厅</span>
+    <span class="tag size">92㎡</span>
+    <span class="tag area-tag">后海</span>
+  </div>
+  <div class="card-desc">92平三房 粤琴一路22号</div>
+  <div class="card-footer"><span class="contact">南山-后海</span></div>
+</div>
+
+<div class="card" data-area="后海" data-price="7900" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-anjuke">安居客</span>
+    <div class="card-title">海洋之心</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">7900元/月</span>
+    <span class="tag rooms">3室2厅</span>
+    <span class="tag size">89㎡</span>
+    <span class="tag area-tag">后海大道</span>
+  </div>
+  <div class="card-desc">带独立露台 3大阳台 采光好</div>
+  <div class="card-footer"><span class="contact">后海大道2322号</span></div>
+</div>
+
+<div class="card highlight" data-area="后海" data-price="6500" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-fangtianxia">房天下</span>
+    <div class="card-title">招商名仕花园</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">6500元/月</span>
+    <span class="tag rooms">2室2厅</span>
+    <span class="tag size">80㎡</span>
+    <span class="tag area-tag">登良站498m</span>
+  </div>
+  <div class="card-desc">南北通透 全配 首次放租 新装修</div>
+  <div class="card-footer">
+    <span class="contact">南山-后海</span>
+    <a class="source-link" href="https://sz.zu.fang.com/chuzu/3_247179561_1.htm" target="_blank">查看详情 →</a>
+  </div>
+</div>
+
+<div class="card" data-area="后海" data-price="8000" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-fangtianxia">房天下</span>
+    <div class="card-title">观海台</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">8000元/月</span>
+    <span class="tag rooms">2室2厅</span>
+    <span class="tag size">82㎡</span>
+    <span class="tag area-tag">后海站444m</span>
+  </div>
+  <div class="card-desc">精装朝南 近海岸城</div>
+  <div class="card-footer">
+    <span class="contact">南山-后海</span>
+    <a class="source-link" href="https://sz.zu.fang.com/chuzu/3_243445669_1.htm" target="_blank">查看详情 →</a>
+  </div>
+</div>
+
+<div class="card" data-area="后海" data-price="5000" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-fangtianxia">房天下</span>
+    <div class="card-title">后海花园</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">5000元/月</span>
+    <span class="tag rooms">2室1厅</span>
+    <span class="tag size">84㎡</span>
+    <span class="tag area-tag">南油站704m</span>
+  </div>
+  <div class="card-desc">东南朝向 性价比极高，需核实实际情况</div>
+  <div class="card-footer">
+    <span class="contact">南山-后海</span>
+    <a class="source-link" href="https://sz.zu.fang.com/chuzu/8_1006544129_1.htm" target="_blank">查看详情 →</a>
+  </div>
+</div>
+
+<div class="card" data-area="后海" data-price="6400" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-fangtianxia">房天下</span>
+    <div class="card-title">瑞铧苑</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">6400元/月</span>
+    <span class="tag rooms">2室2厅</span>
+    <span class="tag size">56㎡</span>
+    <span class="tag area-tag">登良站638m</span>
+  </div>
+  <div class="card-desc">朝南</div>
+  <div class="card-footer">
+    <span class="contact">南山-后海</span>
+    <a class="source-link" href="https://sz.zu.fang.com/chuzu/8_1008028613_1.htm" target="_blank">查看详情 →</a>
+  </div>
+</div>
+
+<div class="card" data-area="后海" data-price="6800" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-fangtianxia">房天下</span>
+    <div class="card-title">后海名苑居</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">6800元/月</span>
+    <span class="tag rooms">2室2厅</span>
+    <span class="tag size">81㎡</span>
+    <span class="tag area-tag">后海</span>
+  </div>
+  <div class="card-desc">东南朝向</div>
+  <div class="card-footer">
+    <span class="contact">南山-后海</span>
+    <a class="source-link" href="https://sz.zu.fang.com/chuzu/8_1005932870_1.htm" target="_blank">查看详情 →</a>
+  </div>
+</div>
+
+<div class="card" data-area="后海" data-price="6930" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-fangtianxia">房天下</span>
+    <div class="card-title">云海天城世家</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">6930元/月</span>
+    <span class="tag rooms">2室1厅</span>
+    <span class="tag size">75㎡</span>
+    <span class="tag area-tag">南油站719m</span>
+  </div>
+  <div class="card-desc">朝西</div>
+  <div class="card-footer">
+    <span class="contact">南山-后海</span>
+    <a class="source-link" href="https://sz.zu.fang.com/chuzu/8_1008342883_1.htm" target="_blank">查看详情 →</a>
+  </div>
+</div>
+
+<div class="card" data-area="后海" data-price="8000" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-fangtianxia">房天下</span>
+    <div class="card-title">漾日湾畔</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">8000元/月</span>
+    <span class="tag rooms">2室2厅</span>
+    <span class="tag size">74㎡</span>
+    <span class="tag area-tag">后海站311m</span>
+  </div>
+  <div class="card-desc">朝西 后海站步行5分钟</div>
+  <div class="card-footer">
+    <span class="contact">南山-后海</span>
+    <a class="source-link" href="https://sz.zu.fang.com/chuzu/8_1008305517_1.htm" target="_blank">查看详情 →</a>
+  </div>
+</div>
+
+<div class="card highlight" data-area="后海" data-price="0" data-direct="true" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-xiaohongshu">小红书</span>
+    <div class="card-title">海境界家园</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">价格待询</span>
+    <span class="tag rooms">2室2厅</span>
+    <span class="tag size">74㎡</span>
+    <span class="tag area-tag">湾厦站600m</span>
+  </div>
+  <div class="card-desc">全南朝向 双阳台 业主直租免中介费 10分钟步行育才四小</div>
+  <div class="card-footer">
+    <span class="contact">业主直租</span>
+    <a class="source-link" href="https://www.xiaohongshu.com/explore/6693c62d0000000025014056" target="_blank">小红书帖子 →</a>
+  </div>
+</div>
+
+<div class="card highlight" data-area="后海" data-price="7900" data-direct="false" data-cat="true">
+  <div class="card-top">
+    <span class="platform-badge platform-xiaohongshu">小红书</span>
+    <div class="card-title">云海天城世家</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">7900元/月</span>
+    <span class="tag rooms">2室</span>
+    <span class="tag size">75㎡</span>
+    <span class="tag cat">🐱 可养猫</span>
+  </div>
+  <div class="card-desc">首次出租 全屋定制家私电器 业主直租 可小刀</div>
+  <div class="card-footer">
+    <span class="contact">南山-后海</span>
+    <a class="source-link" href="https://www.xiaohongshu.com/explore/693237e3000000001e00598c" target="_blank">小红书帖子 →</a>
+  </div>
+</div>
+
+<div class="card" data-area="后海" data-price="6800" data-direct="true" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-xiaohongshu">小红书</span>
+    <div class="card-title">云海天城</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">6800元/月</span>
+    <span class="tag rooms">2室</span>
+    <span class="tag area-tag">海岸城旁</span>
+  </div>
+  <div class="card-desc">近海岸城来福士科技园 自有物业不议价 拎包入住</div>
+  <div class="card-footer">
+    <span class="contact">业主自持</span>
+    <a class="source-link" href="https://www.xiaohongshu.com/explore/692269da000000000d03a5c8" target="_blank">小红书帖子 →</a>
+  </div>
+</div>
+
+<div class="card" data-area="后海" data-price="0" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-xiaohongshu">小红书</span>
+    <div class="card-title">海洋之心（南粤明珠）</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">价格待询</span>
+    <span class="tag rooms">2室2厅</span>
+    <span class="tag size">86㎡</span>
+    <span class="tag area-tag">后海站</span>
+  </div>
+  <div class="card-desc">东南朝向 16楼 三梯八户 后海多条地铁 步行海岸城</div>
+  <div class="card-footer">
+    <span class="contact">个人转租</span>
+    <a class="source-link" href="https://www.xiaohongshu.com/explore/69a59436000000001a0349fb" target="_blank">小红书帖子 →</a>
+  </div>
+</div>
+
+<div class="card" data-area="后海" data-price="0" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-xiaohongshu">小红书</span>
+    <div class="card-title">海印长城</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">价格待询</span>
+    <span class="tag rooms">2居室</span>
+    <span class="tag size">75㎡</span>
+    <span class="tag area-tag">书城站/后海站</span>
+  </div>
+  <div class="card-desc">首次放租 可停车充裕 北向看花园 腾讯滨海大厦旁</div>
+  <div class="card-footer">
+    <span class="contact">南山-后海</span>
+    <a class="source-link" href="https://www.xiaohongshu.com/explore/68b2e449000000001d0138b8" target="_blank">小红书帖子 →</a>
+  </div>
+</div>
+
+<!-- ===== 前海片区 ===== -->
+<div class="section-header"><h2>前海/南山中心片区</h2></div>
+
+<div class="card" data-area="前海" data-price="8000" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-anjuke">安居客</span>
+    <div class="card-title">前海时代</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">8000元/月</span>
+    <span class="tag rooms">2室2厅</span>
+    <span class="tag size">87㎡</span>
+    <span class="tag area-tag">前海</span>
+  </div>
+  <div class="card-desc">南北通透 客厅出阳台 桂湾五路128号</div>
+  <div class="card-footer"><span class="contact">南山-前海</span></div>
+</div>
+
+<div class="card" data-area="前海" data-price="7800" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-anjuke">安居客</span>
+    <div class="card-title">前海花园</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">7800元/月</span>
+    <span class="tag rooms">3室2厅</span>
+    <span class="tag size">93㎡</span>
+    <span class="tag area-tag">前海</span>
+  </div>
+  <div class="card-desc">精装南向 家电齐全 桃园路288号</div>
+  <div class="card-footer"><span class="contact">南山-前海</span></div>
+</div>
+
+<!-- ===== 科技园片区 ===== -->
+<div class="section-header"><h2>科技园/大冲/桃源村片区 — 性价比高，通勤稍远</h2></div>
+
+<div class="card" data-area="科技园" data-price="6500" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-anjuke">安居客</span>
+    <div class="card-title">中爱花园</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">6500元/月</span>
+    <span class="tag rooms">2室2厅</span>
+    <span class="tag size">77㎡</span>
+    <span class="tag area-tag">桃源村站</span>
+  </div>
+  <div class="card-desc">南向正规大两房 地铁口 龙珠七路40号</div>
+  <div class="card-footer"><span class="contact">南山-桃源村</span></div>
+</div>
+
+<div class="card" data-area="科技园" data-price="6250" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-anjuke">安居客</span>
+    <div class="card-title">麒麟花园</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">6250元/月</span>
+    <span class="tag rooms">2室1厅</span>
+    <span class="tag size">70㎡</span>
+    <span class="tag area-tag">南头</span>
+  </div>
+  <div class="card-desc">电梯两房 南北通透 玉泉路3号</div>
+  <div class="card-footer"><span class="contact">南山-南头</span></div>
+</div>
+
+<div class="card" data-area="科技园" data-price="6800" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-anjuke">安居客</span>
+    <div class="card-title">京基御景峯</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">6800元/月</span>
+    <span class="tag rooms">3室2厅</span>
+    <span class="tag size">90㎡</span>
+    <span class="tag area-tag">大学城</span>
+  </div>
+  <div class="card-desc">精装 近北站 车位充足 塘长路</div>
+  <div class="card-footer"><span class="contact">南山-大学城</span></div>
+</div>
+
+<div class="card" data-area="科技园" data-price="7200" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-anjuke">安居客</span>
+    <div class="card-title">西湖林语</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">7200元/月</span>
+    <span class="tag rooms">3室2厅</span>
+    <span class="tag size">79㎡</span>
+    <span class="tag area-tag">大学城</span>
+  </div>
+  <div class="card-desc">精装修全齐拎包入住 丽山路16号</div>
+  <div class="card-footer"><span class="contact">南山-大学城</span></div>
+</div>
+
+<!-- ===== 豆瓣 ===== -->
+<div class="section-header"><h2>豆瓣直租 — 南油/南头片区</h2></div>
+
+<div class="card" data-area="南油" data-price="0" data-direct="true" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-douban">豆瓣</span>
+    <div class="card-title">新街口花园</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">价格待询</span>
+    <span class="tag rooms">2室2厅</span>
+    <span class="tag area-tag">南油 9/12号线</span>
+  </div>
+  <div class="card-desc">全新家具 业主直租 1米8猫爪布沙发 沃尔玛花园城对面</div>
+  <div class="card-footer">
+    <span class="contact">📞 16675161897</span>
+    <a class="source-link" href="https://www.douban.com/group/topic/482969012/" target="_blank">豆瓣帖子 →</a>
+  </div>
+</div>
+
+<div class="card" data-area="南油" data-price="5800" data-direct="false" data-cat="false">
+  <div class="card-top">
+    <span class="platform-badge platform-douban">豆瓣</span>
+    <div class="card-title">金晖大厦</div>
+  </div>
+  <div class="card-meta">
+    <span class="tag price">5800元/月（实付）</span>
+    <span class="tag rooms">2室1厅</span>
+    <span class="tag area-tag">南油12号线</span>
+  </div>
+  <div class="card-desc">个人转租，原价约7800，转租方补贴2000元差价</div>
+  <div class="card-footer">
+    <span class="contact">微信: xiaolobg5921</span>
+    <a class="source-link" href="https://www.douban.com/group/topic/481890636/" target="_blank">豆瓣帖子 →</a>
+  </div>
+</div>
+
+</div><!-- end grid -->
+
+<script>
+function filterCards(type, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const cards = document.querySelectorAll('.card');
+  let visible = 0;
+  cards.forEach(card => {
+    let show = false;
+    if (type === 'all') {
+      show = true;
+    } else if (type === '后海') {
+      show = card.dataset.area === '后海';
+    } else if (type === '前海') {
+      show = card.dataset.area === '前海';
+    } else if (type === '科技园') {
+      show = card.dataset.area === '科技园';
+    } else if (type === '南油') {
+      show = card.dataset.area === '南油';
+    } else if (type === 'cat') {
+      show = card.dataset.cat === 'true';
+    } else if (type === 'direct') {
+      show = card.dataset.direct === 'true';
+    } else if (type === 'budget7k') {
+      const price = parseInt(card.dataset.price);
+      show = price > 0 && price <= 7000;
+    }
+    card.classList.toggle('card-hidden', !show);
+    if (show) visible++;
+  });
+  document.getElementById('total-count').textContent = visible;
+}
+</script>
+
+</body>
+</html>
