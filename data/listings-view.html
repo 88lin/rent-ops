@@ -27,6 +27,13 @@
   .card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.10); }
   .card.highlight { border-color: #0071e3; }
   .card.highlight::before { content: "⭐ 推荐"; position: absolute; top: 12px; right: 12px; font-size: 11px; background: #0071e3; color: #fff; padding: 2px 8px; border-radius: 10px; }
+  .card.risk-red { border-color: #c62828; }
+  .card.risk-red::after { content: "🔴 疑似假房源"; position: absolute; top: 12px; right: 12px; font-size: 11px; background: #c62828; color: #fff; padding: 2px 8px; border-radius: 10px; }
+  .card.risk-yellow { border-color: #f57f17; }
+  .card.risk-yellow::after { content: "🟡 需留意"; position: absolute; top: 12px; right: 12px; font-size: 11px; background: #f57f17; color: #fff; padding: 2px 8px; border-radius: 10px; }
+  .card.risk-red.highlight::before { display: none; }
+  .risk-detail { font-size: 12px; color: #c62828; margin-top: 8px; padding-top: 8px; border-top: 1px solid #f5f5f7; }
+  .risk-detail.yellow { color: #f57f17; }
 
   .card-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
   .platform-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; white-space: nowrap; flex-shrink: 0; }
@@ -90,6 +97,7 @@
   <button class="filter-btn" onclick="filterCards('cat', this)">🐱 可养猫</button>
   <button class="filter-btn" onclick="filterCards('direct', this)">房东直租</button>
   <button class="filter-btn" onclick="filterCards('budget7k', this)">≤7000元</button>
+  <button class="filter-btn" onclick="filterCards('risk', this)">⚠️ 有风险</button>
 </div>
 
 <div class="grid" id="card-grid">
@@ -548,6 +556,8 @@ function filterCards(type, btn) {
     } else if (type === 'budget7k') {
       const price = parseInt(card.dataset.price);
       show = price > 0 && price <= 7000;
+    } else if (type === 'risk') {
+      show = card.dataset.risk === 'red' || card.dataset.risk === 'yellow';
     }
     card.classList.toggle('card-hidden', !show);
     if (show) visible++;
