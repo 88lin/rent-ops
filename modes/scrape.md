@@ -22,13 +22,16 @@ ${CLAUDE_SKILL_DIR}/scripts/setup.sh
 
 ### 前提
 - 用户已有豆瓣账号，并在 Arc 浏览器中登录过豆瓣
-- 用户已加入目标租房小组（默认：深圳租房，ID 613105）
+- 用户已加入目标租房小组。**小组 ID 来自 `${CLAUDE_SKILL_DIR}/cities/{profile.city}.yml` 的 `douban.group_id`**，无需改脚本
 
 ### 运行
 
 ```bash
-# 默认模式（自动尝试 CDP → stealth → 手动验证）
+# 默认模式（读 config/profile.yml 的 city，自动尝试 CDP → stealth → 手动验证）
 ${CLAUDE_SKILL_DIR}/scripts/python.sh ${CLAUDE_SKILL_DIR}/scripts/scrape_douban.py
+
+# 指定城市（覆盖 profile.yml）
+${CLAUDE_SKILL_DIR}/scripts/python.sh ${CLAUDE_SKILL_DIR}/scripts/scrape_douban.py --city beijing
 
 # 强制 stealth 模式（推荐，无需重启 Arc）
 ${CLAUDE_SKILL_DIR}/scripts/python.sh ${CLAUDE_SKILL_DIR}/scripts/scrape_douban.py --stealth
@@ -37,6 +40,8 @@ ${CLAUDE_SKILL_DIR}/scripts/python.sh ${CLAUDE_SKILL_DIR}/scripts/scrape_douban.
 # 先运行：/Applications/Arc.app/Contents/MacOS/Arc --remote-debugging-port=9222
 ${CLAUDE_SKILL_DIR}/scripts/python.sh ${CLAUDE_SKILL_DIR}/scripts/scrape_douban.py --cdp
 ```
+
+**第一次跑新城市**，若报 "cities/xxx.yml 缺少 douban.group_id"，按提示去豆瓣搜 `{城市}租房` 小组，把数字 ID 填进对应 yml 的 `douban.group_id`。
 
 ### 输出
 - `${CLAUDE_SKILL_DIR}/data/douban_raw.jsonl` — 所有抓到的帖子（追加写入）

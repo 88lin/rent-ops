@@ -40,7 +40,7 @@
 | 联系电话 | 手机号 | 否 |
 | 发布时间 | 挂牌日期 | 否 |
 | 图片 | 配图 URL 列表 | 否 |
-| 所在区域 | 如 "南山区-科技园" | 是 |
+| 所在区域 | 如 "{行政区}-{片区}"（以 `cities/{profile.city}.yml` 的 areas 为准） | 是 |
 
 ## 步骤 0.5 — 假房源快检
 
@@ -96,9 +96,22 @@
 - 对比月租与均价
 
 ### 通勤
-- WebSearch `"{工作地点} 到 {小区名} 地铁"` 查询通勤信息
-- 读取 `${CLAUDE_SKILL_DIR}/config/profile.yml` 中的 `work_location` 和 `commute.transport`
-- 估算通勤时间（精度为大致区间）
+**优先使用高德 Web API（硬数据）**：
+
+```bash
+${CLAUDE_SKILL_DIR}/scripts/python.sh \
+  ${CLAUDE_SKILL_DIR}/scripts/amap_query.py commute \
+  --to "{小区名}" --mode transit --pretty
+```
+
+- 输出 JSON 含 `duration_min`、`transfers`、`walking_distance_m` 和已按 `_shared.md` 口径映射的 `score_5`
+- 出发地默认从 `config/profile.yml` 的 `work_location` 读；目标从房源信息中取小区名或详细地址
+- mode 默认 `transit`，可改 `driving` / `walking` / `bicycling` 对齐 `commute.transport`
+
+**兜底（key 未配置或 API 返回非 ok 时）**：
+- WebSearch `"{工作地点} 到 {小区名} 地铁"` 估算通勤时间（精度为大致区间）
+
+返回 `{"status": "disabled", ...}` 时不要中断评估，直接走 WebSearch 兜底路径。
 
 ### 房况
 - 基于抓取到的装修、楼层、朝向、面积等字段评分
@@ -109,8 +122,21 @@
 - 是否封闭小区、有无物业、门禁
 
 ### 生活便利
+**优先使用高德 Web API（POI 加权硬数据）**：
+
+```bash
+${CLAUDE_SKILL_DIR}/scripts/python.sh \
+  ${CLAUDE_SKILL_DIR}/scripts/amap_query.py convenience \
+  --location "{小区名}" --pretty
+```
+
+- 输出 JSON 含 `score_5`（已按权重映射为 1-5 分）和 `breakdown`（每类 POI 的数量、最近距离、top 3）
+- 类别和权重在 `config/amap.yml` 的 `convenience.categories` 定义（默认涵盖超市/便利店/餐饮/地铁/医院/菜市场/健身房）
+- 地铁口距离从 `breakdown.metro.nearest_m` 直接读
+
+**兜底（disabled 或 error 时）**：
 - WebSearch `"{小区名} 周边配套"` 了解周边设施
-- 地铁口距离（通勤查询中可附带获取）
+- 地铁口距离从通勤查询结果的 `walking_distance_m` 粗估
 
 ### 房东/中介可靠性
 - 发帖人信息分析：个人 vs 中介 vs 疑似二房东

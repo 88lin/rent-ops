@@ -61,6 +61,27 @@ git clone https://github.com/BENZEMA216/rent-ops.git .claude/skills/rent
 
 首次运行会引导你配置城市、预算、户型等租房需求。
 
+## 多城市支持
+
+所有平台 URL、豆瓣小组 ID、行政区和坐标全部通过 `cities/{pinyin}.yml` 驱动。切换城市只改 `config/profile.yml` 的 `city` 字段即可。
+
+**内置城市**
+
+| 拼音 | 中文 | 子域 code | 状态 |
+|------|------|----------|------|
+| shenzhen | 深圳 | sz | ✅ 完整 |
+| beijing  | 北京 | bj | ⚠️ 豆瓣 group_id 未核实 |
+| shanghai | 上海 | sh | ⚠️ 豆瓣 group_id 未核实 |
+| guangzhou| 广州 | gz | ⚠️ 豆瓣 group_id 未核实 |
+| hangzhou | 杭州 | hz | ⚠️ 豆瓣 group_id 未核实 |
+| chengdu  | 成都 | cd | ⚠️ 豆瓣 group_id 未核实 |
+
+未核实 = 作者未亲自验证豆瓣小组 ID。第一次跑 `/rent scrape` 时如果报错，按提示去豆瓣搜 `{城市}租房` 小组把 ID 填进对应 yml。
+
+**新增城市：** 见 [`cities/README.md`](cities/README.md)，基本上就是复制 `shenzhen.yml` 改几个字段。
+
+**地图切换城市：** 改完 `config/profile.yml` 后重跑一次 `scripts/build_city_runtime.py` 生成 `data/city-runtime.json`，刷新浏览器即可。
+
 ## 技术栈
 
 - **爬虫**: Playwright + playwright-stealth（豆瓣）、MediaCrawler + xhshow 签名（小红书）
@@ -141,37 +162,68 @@ AI 助手环境没有交互式终端，需要提前准备好登录态：
 | 依赖 | 用途 | 安装 |
 |------|------|------|
 | MediaCrawler | 小红书爬虫 | `git clone https://github.com/NanmiCoder/MediaCrawler` + `pip install -r requirements.txt`（需 Python 3.11）|
-| 高德地图 API Key | 地图可视化 + POI 搜索 | 在 [console.amap.com](https://console.amap.com) 注册，创建「Web端(JS API)」类型的 Key |
+| 高德 JS API Key | 地图可视化（浏览器渲染） | [console.amap.com](https://console.amap.com) → 创建「Web端(JS API)」Key，填入 `data/map-view.html` |
+| 高德 Web 服务 Key | **通勤 + 便利维度硬数据** | [console.amap.com](https://console.amap.com) → 创建「Web服务」Key（另一种类型，不是 JS API），复制 `templates/amap.example.yml` 到 `config/amap.yml` 填 `web_service_key`。5000 次/天免费 |
 | Arc 浏览器 | CDP 模式（最强反检测） | [arc.net](https://arc.net) |
+
+## 通勤 + 便利：从软评分到硬数据
+
+配好 Web 服务 Key 后，两个评分维度自动从"WebSearch 估算"升级为"真实地图数据"：
+
+```bash
+# 通勤：{工作地} → {小区}，返回分钟数 + 换乘次数 + 1-5 分
+scripts/python.sh scripts/amap_query.py commute --to "望京SOHO" --pretty
+
+# 便利：500m 内 POI 加权分（超市/便利店/餐饮/地铁/医院/菜市场/健身房）
+scripts/python.sh scripts/amap_query.py convenience --location "望京SOHO" --pretty
+```
+
+类别和权重在 `config/amap.yml` 可调。无 key 时 CLI 返回 `status: disabled`，agent 自动降级 WebSearch 兜底。
 
 ## 数据架构
 
 ```
 config/
-└── profile.yml          # 你的租房需求配置
+└── profile.yml             # 你的租房需求配置（含 city）
+
+cities/                     # 城市抽象层（跨城市通用）
+├── shenzhen.yml            # 深圳：code/豆瓣组/片区/坐标
+├── beijing.yml
+├── shanghai.yml
+├── ...
+└── README.md               # 如何新增一个城市
 
 data/
-├── listings.md          # 房源跟踪表（single source of truth）
-├── listings.json        # 结构化数据（地图用）
-├── pipeline.md          # 待评估队列
-├── map-view.html        # 高德地图可视化
-├── douban_raw.jsonl     # 豆瓣原始数据
-└── douban_filtered.jsonl # 豆瓣筛选数据
+├── listings.md             # 房源跟踪表（single source of truth）
+├── listings.json           # 结构化数据（地图用）
+├── city-runtime.json       # 城市运行时配置（build_city_runtime.py 生成，地图消费）
+├── pipeline.md             # 待评估队列
+├── map-view.html           # 高德地图可视化（数据驱动，不写死城市）
+├── sample-shenzhen.json    # 深圳示例数据兜底
+├── douban_raw.jsonl        # 豆瓣原始数据
+└── douban_filtered.jsonl   # 豆瓣筛选数据
 
 modes/
-├── _shared.md           # 评分规则（系统层）
-├── _profile.md          # 个人画像（用户层）
-├── auto-evaluate.md     # 自动评估
-├── scan.md              # 平台扫描
-├── scrape.md            # 专用爬虫
-├── map.md               # 地图可视化
-├── risk.md              # 风险检测
-├── verify.md            # 假房源检测
-└── visit.md             # 看房准备
+├── _shared.md              # 评分规则（系统层）
+├── _profile.md             # 个人画像（用户层）
+├── auto-evaluate.md        # 自动评估
+├── scan.md                 # 平台扫描
+├── scrape.md               # 专用爬虫
+├── map.md                  # 地图可视化
+├── risk.md                 # 风险检测
+├── verify.md               # 假房源检测
+└── visit.md                # 看房准备
 
-reports/                 # 评估报告
 scripts/
-└── scrape_douban.py     # 豆瓣爬虫
+├── setup.sh                # 一键安装（venv + Playwright + Chromium）
+├── doctor.sh               # 安装状态检查
+├── python.sh               # venv Python 封装
+├── scrape_douban.py        # 豆瓣爬虫（支持 --city）
+├── build_city_runtime.py   # 生成 data/city-runtime.json
+└── lib/
+    └── city.py             # 城市 loader（profile + cities/*.yml）
+
+reports/                    # 评估报告
 ```
 
 ## License

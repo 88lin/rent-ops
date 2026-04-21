@@ -5,9 +5,10 @@ data/*.jsonl
 data/*.json
 !data/.gitkeep
 
-# Keep system-layer HTML templates
+# Keep system-layer HTML templates + bundled sample data
 !data/map-view.html
 !data/listings-view.html
+!data/sample-*.json
 
 # Reports (never commit)
 reports/*.md
@@ -15,6 +16,7 @@ reports/*.md
 
 # User config (created from templates)
 config/profile.yml
+config/amap.yml
 modes/_profile.md
 platforms.yml
 

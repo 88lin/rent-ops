@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>深圳租房地图</title>
+<title>租房地图</title>
 <script>
 window._AMapSecurityConfig = { securityJsCode: 'bb2785b7b4e6c884a1051a3da144f6d9' };
 </script>
@@ -40,18 +40,7 @@ window._AMapSecurityConfig = { securityJsCode: 'bb2785b7b4e6c884a1051a3da144f6d9
     transition: all 0.15s; color: #333;
   }
   .chip:hover { border-color: #999; }
-  .chip.active { border-color: transparent; color: #fff; }
-  .chip[data-f="all"].active    { background: #1d1d1f; }
-  .chip[data-f="后海"].active   { background: #0071e3; }
-  .chip[data-f="前海"].active   { background: #34a853; }
-  .chip[data-f="科技园"].active { background: #f5a623; }
-  .chip[data-f="南油"].active   { background: #9b59b6; }
-  .chip[data-f="南山"].active   { background: #00bcd4; }
-  .chip[data-f="蛇口"].active   { background: #795548; }
-  .chip[data-f="深圳湾"].active { background: #ff5722; }
-  .chip[data-f="7k"].active     { background: #00897b; }
-  .chip[data-f="xhs"].active    { background: #ff2442; }
-  .chip[data-f="douban"].active { background: #2e7d32; }
+  .chip.active { border-color: transparent; color: #fff; background: #1d1d1f; }
 
   #map { position: fixed; top: 0; left: 0; right: 0; bottom: 0; }
 
@@ -81,6 +70,9 @@ window._AMapSecurityConfig = { securityJsCode: 'bb2785b7b4e6c884a1051a3da144f6d9
   .pb-房天下 { background: #e8f5e9; color: #2e7d32; }
   .pb-小红书 { background: #fce4ec; color: #c62828; }
   .pb-豆瓣   { background: #e8eaf6; color: #283593; }
+  .pb-贝壳   { background: #e3f2fd; color: #1565c0; }
+  .pb-58     { background: #fff9c4; color: #f57f17; }
+  .pb-自如   { background: #f3e5f5; color: #6a1b9a; }
 
   .panel-rec {
     display: inline-flex; font-size: 11px; background: #0071e3; color: #fff;
@@ -135,6 +127,7 @@ window._AMapSecurityConfig = { securityJsCode: 'bb2785b7b4e6c884a1051a3da144f6d9
     background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);
     border-radius: 12px; padding: 12px 14px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.12); font-size: 12px;
+    max-height: 60vh; overflow-y: auto;
   }
   .leg-row { display: flex; align-items: center; gap: 7px; line-height: 1.9; color: #333; }
   .leg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
@@ -145,30 +138,35 @@ window._AMapSecurityConfig = { securityJsCode: 'bb2785b7b4e6c884a1051a3da144f6d9
     font-size: 11px; color: #86868b; background: rgba(255,255,255,0.9);
     padding: 4px 10px; border-radius: 8px;
   }
+
+  #setup-banner {
+    position: fixed; inset: 0; z-index: 500;
+    background: #f5f5f7; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; padding: 40px; text-align: center;
+  }
+  #setup-banner h2 { font-size: 22px; margin-bottom: 12px; color: #1d1d1f; }
+  #setup-banner p { color: #515154; max-width: 520px; line-height: 1.5; margin-bottom: 16px; }
+  #setup-banner code { background: #1d1d1f; color: #fff; padding: 8px 14px; border-radius: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
 </style>
 </head>
 <body>
 
+<div id="setup-banner" style="display:none">
+  <h2>⚠ 缺少 city-runtime.json</h2>
+  <p>地图需要城市配置文件才能渲染。在项目根目录执行：</p>
+  <code>python3 scripts/build_city_runtime.py</code>
+  <p style="margin-top:18px; font-size:12px">运行后刷新本页即可。配置来自 <code style="color:#0071e3;background:#e8f0fe;padding:2px 6px">config/profile.yml</code> 的 city 字段 + <code style="color:#0071e3;background:#e8f0fe;padding:2px 6px">cities/{pinyin}.yml</code>。</p>
+</div>
+
 <div id="header">
   <div>
-    <h1>深圳租房地图</h1>
-    <p>工作地: 深圳湾口岸 · 8000元 · 整租两室</p>
+    <h1 id="title">租房地图</h1>
+    <p id="subtitle">加载中…</p>
   </div>
   <div id="count-pill">-- 套</div>
 </div>
 
-<div id="filters">
-  <div class="chip active" data-f="all"    onclick="doFilter('all',this)">全部</div>
-  <div class="chip" data-f="后海"   onclick="doFilter('后海',this)">后海</div>
-  <div class="chip" data-f="南油"   onclick="doFilter('南油',this)">南油</div>
-  <div class="chip" data-f="蛇口"   onclick="doFilter('蛇口',this)">蛇口</div>
-  <div class="chip" data-f="深圳湾" onclick="doFilter('深圳湾',this)">深圳湾</div>
-  <div class="chip" data-f="前海"   onclick="doFilter('前海',this)">前海</div>
-  <div class="chip" data-f="科技园" onclick="doFilter('科技园',this)">科技园</div>
-  <div class="chip" data-f="7k"     onclick="doFilter('7k',this)">7000元</div>
-  <div class="chip" data-f="xhs"    onclick="doFilter('xhs',this)">小红书</div>
-  <div class="chip" data-f="douban"  onclick="doFilter('douban',this)">豆瓣</div>
-</div>
+<div id="filters"></div>
 
 <div id="map"></div>
 
@@ -178,57 +176,28 @@ window._AMapSecurityConfig = { securityJsCode: 'bb2785b7b4e6c884a1051a3da144f6d9
 </div>
 
 <div id="legend">
-  <div class="leg-row"><span class="leg-dot" style="background:#ff3b30"></span>深圳湾口岸（工作地）</div>
-  <div class="leg-row"><span class="leg-dot" style="background:#0071e3"></span>后海</div>
-  <div class="leg-row"><span class="leg-dot" style="background:#9b59b6"></span>南油</div>
-  <div class="leg-row"><span class="leg-dot" style="background:#795548"></span>蛇口</div>
-  <div class="leg-row"><span class="leg-dot" style="background:#ff5722"></span>深圳湾</div>
-  <div class="leg-row"><span class="leg-dot" style="background:#34a853"></span>前海</div>
-  <div class="leg-row"><span class="leg-dot" style="background:#f5a623"></span>科技园</div>
+  <div id="legend-rows"></div>
   <div class="leg-hint">数字 = 月租(千元) · 大圈 = 有价格</div>
 </div>
 
 <div id="geo-status"></div>
 
 <script>
-const WORK = [113.9445, 22.5195];
-const areaColor = {
-  '后海':'#0071e3','前海':'#34a853','科技园':'#f5a623',
-  '南油':'#9b59b6','南山':'#00bcd4','蛇口':'#795548',
-  '深圳湾':'#ff5722','桃源':'#f5a623','湾厦':'#9b59b6','登良':'#0071e3',
-};
-
-// ── 原有精选房源（安居客/房天下 - 已有精确坐标）──
-const legacyListings = [
-  { name:'弘都世纪公寓', platform:'安居客', area:'后海', pos:[113.9378,22.5268], price:7100, rooms:'2室2厅', size:'68㎡', metro:'湾厦站', desc:'精装 近育才四小', url:null, rec:true },
-  { name:'弘都世纪公寓', platform:'安居客', area:'后海', pos:[113.9382,22.5270], price:7300, rooms:'2室2厅', size:'68㎡', metro:'湾厦站', desc:'蛇口海域地铁旁精装复式两房', url:null, rec:false },
-  { name:'天海花园', platform:'安居客', area:'后海', pos:[113.9437,22.5295], price:7500, rooms:'3室2厅', size:'90㎡', metro:'后海', desc:'免中介费 空房 粤琴一路22号', url:null, rec:false },
-  { name:'天海花园', platform:'安居客', area:'后海', pos:[113.9441,22.5299], price:7000, rooms:'3室2厅', size:'92㎡', metro:'后海', desc:'92平三房', url:null, rec:false },
-  { name:'海洋之心', platform:'安居客', area:'后海', pos:[113.9498,22.5342], price:7900, rooms:'3室2厅', size:'89㎡', metro:'后海站', desc:'带独立露台 3大阳台 采光好', url:null, rec:false },
-  { name:'招商名仕花园', platform:'房天下', area:'后海', pos:[113.9318,22.5215], price:6500, rooms:'2室2厅', size:'80㎡', metro:'登良站498m', desc:'南北通透 全配 首次放租', url:'https://sz.zu.fang.com/chuzu/3_247179561_1.htm', rec:true },
-  { name:'观海台', platform:'房天下', area:'后海', pos:[113.9421,22.5315], price:8000, rooms:'2室2厅', size:'82㎡', metro:'后海站444m', desc:'精装朝南 近海岸城', url:'https://sz.zu.fang.com/chuzu/3_243445669_1.htm', rec:false },
-  { name:'后海花园', platform:'房天下', area:'后海', pos:[113.9258,22.5180], price:5000, rooms:'2室1厅', size:'84㎡', metro:'南油站704m', desc:'东南朝向 性价比', url:'https://sz.zu.fang.com/chuzu/8_1006544129_1.htm', rec:false },
-  { name:'瑞铧苑', platform:'房天下', area:'后海', pos:[113.9308,22.5228], price:6400, rooms:'2室2厅', size:'56㎡', metro:'登良站638m', desc:'朝南', url:'https://sz.zu.fang.com/chuzu/8_1008028613_1.htm', rec:false },
-  { name:'后海名苑居', platform:'房天下', area:'后海', pos:[113.9468,22.5308], price:6800, rooms:'2室2厅', size:'81㎡', metro:'后海', desc:'东南朝向', url:'https://sz.zu.fang.com/chuzu/8_1005932870_1.htm', rec:false },
-  { name:'云海天城世家', platform:'房天下', area:'后海', pos:[113.9272,22.5190], price:6930, rooms:'2室1厅', size:'75㎡', metro:'南油站719m', desc:'朝西', url:'https://sz.zu.fang.com/chuzu/8_1008342883_1.htm', rec:false },
-  { name:'漾日湾畔', platform:'房天下', area:'后海', pos:[113.9432,22.5328], price:8000, rooms:'2室2厅', size:'74㎡', metro:'后海站311m', desc:'朝西', url:'https://sz.zu.fang.com/chuzu/8_1008305517_1.htm', rec:false },
-  { name:'海境界家园', platform:'小红书', area:'后海', pos:[113.9362,22.5256], price:null, rooms:'2室2厅', size:'74㎡', metro:'湾厦站600m', desc:'全南朝向双阳台 业主直租免中介', direct:true, url:'https://www.xiaohongshu.com/explore/6693c62d0000000025014056', rec:true },
-  { name:'前海时代', platform:'安居客', area:'前海', pos:[113.8988,22.5168], price:8000, rooms:'2室2厅', size:'87㎡', metro:'前海', desc:'南北通透 客厅出阳台', url:null, rec:false },
-  { name:'前海花园', platform:'安居客', area:'前海', pos:[113.8936,22.5398], price:7800, rooms:'3室2厅', size:'93㎡', metro:'前海', desc:'精装南向 家电齐全', url:null, rec:false },
-  { name:'中爱花园', platform:'安居客', area:'科技园', pos:[113.9305,22.5733], price:6500, rooms:'2室2厅', size:'77㎡', metro:'龙珠七路', desc:'南向正规大两房 地铁口', url:null, rec:false },
-  { name:'麒麟花园', platform:'安居客', area:'科技园', pos:[113.9238,22.5465], price:6250, rooms:'2室1厅', size:'70㎡', metro:'南头', desc:'电梯两房 南北通透', url:null, rec:false },
-  { name:'京基御景峯', platform:'安居客', area:'科技园', pos:[113.9725,22.5985], price:6800, rooms:'3室2厅', size:'90㎡', metro:'北站', desc:'精装 近北站 车位充足', url:null, rec:false },
-  { name:'西湖林语', platform:'安居客', area:'科技园', pos:[113.9668,22.5925], price:7200, rooms:'3室2厅', size:'79㎡', metro:'大学城', desc:'精装修全齐拎包入住', url:null, rec:false },
+// ────────────── 颜色调色板 ──────────────
+const DEFAULT_PALETTE = [
+  '#0071e3', '#34a853', '#f5a623', '#9b59b6', '#00bcd4',
+  '#795548', '#ff5722', '#00897b', '#a78bfa', '#ec407a',
+  '#26a69a', '#ef5350', '#7e57c2', '#5c6bc0', '#66bb6a',
 ];
+function pickColor(i) { return DEFAULT_PALETTE[i % DEFAULT_PALETTE.length]; }
 
-const map = new AMap.Map('map', { zoom: 13, center: WORK, mapStyle: 'amap://styles/normal', viewMode: '2D' });
-map.addControl(new AMap.Scale({ position: 'LB' }));
-
-new AMap.Marker({
-  position: WORK, offset: new AMap.Pixel(-18, -18),
-  content: '<div class="work-wrap"><div class="work-pulse"></div><div class="work-core">🏢</div></div>',
-  zIndex: 200,
-}).addTo(map);
+// ────────────── 全局状态 ──────────────
+let RUNTIME = null;           // 从 city-runtime.json 读
+let WORK = null;              // [lng, lat] — 工作地坐标
+let map = null;
+let placeSearch = null;
+let geocoder = null;
+const markerObjs = [];
 
 function distKm(p1, p2) {
   const R = 6371, dLat = (p2[1]-p1[1])*Math.PI/180, dLng = (p2[0]-p1[0])*Math.PI/180;
@@ -236,14 +205,172 @@ function distKm(p1, p2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-const markerObjs = [];
+// ────────────── 入口 ──────────────
+async function boot() {
+  // 读 runtime
+  try {
+    const r = await fetch('city-runtime.json');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    RUNTIME = await r.json();
+  } catch (e) {
+    document.getElementById('setup-banner').style.display = 'flex';
+    console.warn('加载 city-runtime.json 失败:', e);
+    return;
+  }
 
+  // 给 areas 里没有 color 的补上默认色
+  let idx = 0;
+  for (const [name, info] of Object.entries(RUNTIME.areas)) {
+    if (!info.color) info.color = pickColor(idx);
+    idx++;
+  }
+
+  renderHeader();
+  renderFilters();
+  renderLegend();
+
+  map = new AMap.Map('map', {
+    zoom: 12,
+    center: RUNTIME.city.center,
+    mapStyle: 'amap://styles/normal',
+    viewMode: '2D',
+  });
+  map.addControl(new AMap.Scale({ position: 'LB' }));
+
+  placeSearch = new AMap.PlaceSearch({
+    city: RUNTIME.city.amap_city_name,
+    citylimit: true,
+    pageSize: 1,
+  });
+  geocoder = new AMap.Geocoder({ city: RUNTIME.city.amap_city_name });
+
+  await resolveWorkLocation();
+
+  // 装载 listings.json（用户真实数据）→ 若失败且是深圳，尝试 sample
+  let loaded = await tryLoadListings('listings.json');
+  if (!loaded && RUNTIME.city.pinyin === 'shenzhen') {
+    console.info('未找到 listings.json，加载深圳示例数据');
+    await tryLoadListings('sample-shenzhen.json', { isSample: true });
+  }
+
+  updateCount();
+}
+
+function renderHeader() {
+  const c = RUNTIME.city;
+  const p = RUNTIME.profile || {};
+  document.getElementById('title').textContent = `${c.name}租房地图`;
+  const parts = [];
+  if (RUNTIME.work_location.label) parts.push(`工作地: ${RUNTIME.work_location.label}`);
+  if (p.budget_max) parts.push(`≤${p.budget_max}元`);
+  if (p.type) parts.push(p.type);
+  if (p.rooms && p.rooms.length) parts.push(p.rooms.join('/'));
+  document.getElementById('subtitle').textContent = parts.join(' · ') || `${c.name}`;
+}
+
+function renderFilters() {
+  const host = document.getElementById('filters');
+  host.innerHTML = '';
+
+  // 全部
+  const all = mkChip('all', '全部', '#1d1d1f');
+  all.classList.add('active');
+  host.appendChild(all);
+
+  // 行政区 + 热门片区（按 area_order 前 10 个）
+  const order = (RUNTIME.area_order || []).slice(0, 12);
+  for (const name of order) {
+    const info = RUNTIME.areas[name];
+    host.appendChild(mkChip(name, name, info.color));
+  }
+
+  // 预算档：用户 budget_max 的 0.85x
+  const bmax = RUNTIME.profile?.budget_max;
+  if (bmax) {
+    const cap = Math.round(bmax * 0.85 / 1000) * 1000;
+    host.appendChild(mkChip(`price:${cap}`, `≤${cap/1000}k`, '#00897b'));
+  }
+
+  // 平台
+  host.appendChild(mkChip('platform:小红书', '小红书', '#ff2442'));
+  host.appendChild(mkChip('platform:豆瓣', '豆瓣', '#2e7d32'));
+}
+
+function mkChip(filter, label, activeColor) {
+  const el = document.createElement('div');
+  el.className = 'chip';
+  el.dataset.f = filter;
+  el.textContent = label;
+  el.style.setProperty('--active-color', activeColor);
+  el.onclick = () => doFilter(filter, el);
+  return el;
+}
+
+function renderLegend() {
+  const host = document.getElementById('legend-rows');
+  host.innerHTML = '';
+  // 工作地
+  if (RUNTIME.work_location.label) {
+    host.innerHTML += `<div class="leg-row"><span class="leg-dot" style="background:#ff3b30"></span>${escapeHtml(RUNTIME.work_location.label)}</div>`;
+  }
+  // 取前 8 个片区显示在 legend 里
+  const entries = Object.entries(RUNTIME.areas).slice(0, 8);
+  for (const [name, info] of entries) {
+    host.innerHTML += `<div class="leg-row"><span class="leg-dot" style="background:${info.color}"></span>${escapeHtml(name)}</div>`;
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+async function resolveWorkLocation() {
+  const label = RUNTIME.work_location.label;
+  if (!label) return;
+
+  // AMap.Geocoder 解析工作地坐标
+  const pos = await new Promise(resolve => {
+    geocoder.getLocation(label, (status, result) => {
+      if (status === 'complete' && result.geocodes && result.geocodes.length > 0) {
+        const g = result.geocodes[0];
+        resolve([g.location.lng, g.location.lat]);
+      } else {
+        // 降级：PlaceSearch
+        placeSearch.search(label, (ps_status, ps_result) => {
+          if (ps_status === 'complete' && ps_result.poiList && ps_result.poiList.pois.length > 0) {
+            const poi = ps_result.poiList.pois[0];
+            resolve([poi.location.lng, poi.location.lat]);
+          } else {
+            resolve(null);
+          }
+        });
+      }
+    });
+  });
+
+  if (!pos) {
+    console.warn('工作地解析失败:', label);
+    return;
+  }
+  WORK = pos;
+  map.setCenter(WORK);
+
+  new AMap.Marker({
+    position: WORK, offset: new AMap.Pixel(-18, -18),
+    content: '<div class="work-wrap"><div class="work-pulse"></div><div class="work-core">🏢</div></div>',
+    zIndex: 200,
+  }).addTo(map);
+}
+
+// ────────────── 标记 ──────────────
 function addMarker(l) {
-  const color = areaColor[l.area] || '#666';
+  const areaInfo = RUNTIME.areas[l.area];
+  const color = (areaInfo && areaInfo.color) || '#666';
   const hasPrice = l.price && l.price > 0;
   const label = hasPrice ? (l.price/1000).toFixed(1)+'k' : '?';
   const cls = hasPrice ? 'big' : 'sm';
   const pos = l.pos || [l.lng, l.lat];
+  if (!pos || pos.length !== 2) return;
 
   const m = new AMap.Marker({
     position: pos,
@@ -258,49 +385,60 @@ function addMarker(l) {
   return m;
 }
 
-// 加载精选数据
-legacyListings.forEach(l => addMarker(l));
-updateCount();
+// ────────────── 数据加载 ──────────────
+async function tryLoadListings(file, opts = {}) {
+  try {
+    const r = await fetch(file);
+    if (!r.ok) return false;
+    const data = await r.json();
+    if (!Array.isArray(data) || data.length === 0) return false;
 
-// ── 高德 PlaceSearch 地理编码 ──
-const placeSearch = new AMap.PlaceSearch({ city: '深圳', citylimit: true, pageSize: 1 });
-const geocoder = new AMap.Geocoder({ city: '深圳' });
+    // 先把已有 pos 的直接渲染
+    const withPos = data.filter(l => l.pos && l.pos.length === 2);
+    const needGeo = data.filter(l => !l.pos && (l.title || l.community));
 
-// 从标题/描述提取搜索关键词
+    withPos.forEach(l => addMarker(l));
+
+    // 对没坐标的房源做 PlaceSearch
+    if (needGeo.length) await geocodeListings(needGeo);
+
+    if (opts.isSample) {
+      document.getElementById('subtitle').textContent += ' · [示例数据]';
+    }
+    return true;
+  } catch (e) {
+    console.warn('加载 ' + file + ' 失败:', e);
+    return false;
+  }
+}
+
 function extractSearchTerm(item) {
   const text = item.title || '';
-  // 尝试提取小区名（X花园/X大厦/X公寓 等）
   const suffixes = '花园|天城|大厦|中心|公寓|世家|广场|名苑|雅苑|公馆|翠园|家园|华庭|林语|新村|湾畔|峰|峯|苑|阁|庭|台|府|寓|堡|岸|境界|名城|城邦|名府|壹号';
   const re = new RegExp(`([\\u4e00-\\u9fff]{2,6}(?:${suffixes}))`, 'g');
   const matches = text.match(re);
+  const cityName = RUNTIME.city.name;
   if (matches) {
-    // 过滤无意义匹配
     const bad = new Set(['酒店式公寓','花园小区','花园社区','老小区']);
     const good = matches.find(m => !bad.has(m));
-    if (good) return '深圳南山' + good;
+    if (good) return cityName + good;
   }
-  // 降级：用区域名 + 标题前几个汉字
   const area = item.area || '';
-  // 尝试提取地铁站等地标
   const metroMatch = text.match(/([\u4e00-\u9fff]{2,4}(?:地铁站|站旁|路))/);
-  if (metroMatch) return '深圳南山' + metroMatch[1];
-  return '深圳南山' + area;
+  if (metroMatch) return cityName + metroMatch[1];
+  return cityName + area;
 }
 
-// 逐个地理编码（限速 100ms 间隔）
 async function geocodeListings(items) {
   const statusEl = document.getElementById('geo-status');
-  const existUrls = new Set(legacyListings.filter(l=>l.url).map(l=>l.url));
-  let done = 0, total = items.length;
+  let done = 0;
+  const total = items.length;
 
   for (const item of items) {
-    if (existUrls.has(item.url)) { done++; continue; }
-
     const searchTerm = extractSearchTerm(item);
     statusEl.textContent = `定位中 ${done}/${total}: ${searchTerm}`;
-
     try {
-      const pos = await new Promise((resolve) => {
+      const pos = await new Promise(resolve => {
         placeSearch.search(searchTerm, (status, result) => {
           if (status === 'complete' && result.poiList && result.poiList.pois.length > 0) {
             const poi = result.poiList.pois[0];
@@ -312,14 +450,15 @@ async function geocodeListings(items) {
       });
 
       const listing = {
-        name: item.community || item.title.slice(0, 12),
+        name: item.community || (item.title || '').slice(0, 12),
         platform: item.platform,
         area: item.area,
         pos: pos || areaFallback(item.area),
         price: item.price || null,
-        rooms: item.room,
-        size: null, metro: null,
-        desc: item.title,
+        rooms: item.room || item.rooms,
+        size: item.size || null,
+        metro: item.metro || null,
+        desc: item.title || item.desc,
         url: item.url,
         rec: false,
         geocoded: !!pos,
@@ -328,7 +467,6 @@ async function geocodeListings(items) {
     } catch(e) {
       console.warn('Geocode error:', searchTerm, e);
     }
-
     done++;
     await sleep(150);
   }
@@ -339,64 +477,61 @@ async function geocodeListings(items) {
 }
 
 function areaFallback(area) {
-  const fallback = {
-    '后海':[113.9401,22.5268],'南油':[113.9196,22.5130],'前海':[113.8988,22.5250],
-    '科技园':[113.9480,22.5480],'深圳湾':[113.9500,22.5100],'蛇口':[113.9100,22.4900],
-    '湾厦':[113.9350,22.5100],'登良':[113.9300,22.5200],'南山':[113.9300,22.5350],
-    '桃源':[113.9380,22.5650],
-  };
-  const base = fallback[area] || [113.93, 22.53];
+  const info = RUNTIME.areas[area];
+  const base = (info && info.pos) || RUNTIME.city.center;
   return [base[0] + (Math.random()-0.5)*0.006, base[1] + (Math.random()-0.5)*0.004];
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-// 加载 listings.json 并地理编码
-fetch('listings.json')
-  .then(r => r.json())
-  .then(data => geocodeListings(data))
-  .catch(e => console.warn('Load listings.json failed:', e));
-
 function updateCount() {
   document.getElementById('count-pill').textContent = markerObjs.length + ' 套';
 }
 
-// ── 详情面板 ──
+// ────────────── 详情面板 ──────────────
 function openPanel(l) {
   const pos = l.pos;
-  const dist = distKm(WORK, pos);
-  const distTxt = dist < 1 ? `约 ${Math.round(dist*1000)} m` : `约 ${dist.toFixed(1)} km`;
-
+  const distTxt = WORK ? fmtDist(distKm(WORK, pos)) : null;
   const priceHtml = l.price
     ? `<div class="panel-price">${l.price.toLocaleString()}<span class="unit"> 元/月</span></div>`
     : `<div class="panel-tba">价格待询</div>`;
 
   const tags = [
-    l.rooms ? `<span class="ptag">${l.rooms}</span>` : '',
-    l.size ? `<span class="ptag">${l.size}</span>` : '',
-    l.metro ? `<span class="ptag">${l.metro}</span>` : '',
+    l.rooms ? `<span class="ptag">${escapeHtml(l.rooms)}</span>` : '',
+    l.size ? `<span class="ptag">${escapeHtml(l.size)}</span>` : '',
+    l.metro ? `<span class="ptag">${escapeHtml(l.metro)}</span>` : '',
     l.direct ? `<span class="ptag direct">🏠 房东直租</span>` : '',
   ].join('');
 
   const btn = l.url
     ? `<a class="panel-btn" href="${l.url}" target="_blank">查看原帖 →</a>`
-    : `<a class="panel-btn disabled">暂无链接（${l.platform}）</a>`;
+    : `<a class="panel-btn disabled">暂无链接（${escapeHtml(l.platform || '')}）</a>`;
+
+  const distBlock = distTxt
+    ? `<div class="panel-dist">📍 距${escapeHtml(RUNTIME.work_location.label || '工作地')}（直线）<b>${distTxt}</b></div>`
+    : '';
+
+  const platformClass = (l.platform || '').replace(/[^\u4e00-\u9fff\w]/g, '');
 
   document.getElementById('panel-body').innerHTML = `
     <div>
-      <span class="panel-badge pb-${l.platform}">${l.platform}</span>
+      <span class="panel-badge pb-${platformClass}">${escapeHtml(l.platform || '未知')}</span>
       ${l.rec ? '<span class="panel-rec">推荐</span>' : ''}
       ${l.geocoded === false ? '<span style="font-size:11px;color:#999;margin-left:4px">大致位置</span>' : ''}
     </div>
-    <div class="panel-name">${l.name}</div>
+    <div class="panel-name">${escapeHtml(l.name || '未命名')}</div>
     ${priceHtml}
     <div class="panel-tags">${tags}</div>
-    <div class="panel-desc">${l.desc || ''}</div>
-    <div class="panel-dist">📍 距深圳湾口岸（直线）<b>${distTxt}</b></div>
+    <div class="panel-desc">${escapeHtml(l.desc || '')}</div>
+    ${distBlock}
     ${btn}
   `;
   document.getElementById('panel').classList.add('open');
   map.panTo(pos);
+}
+
+function fmtDist(km) {
+  return km < 1 ? `约 ${Math.round(km*1000)} m` : `约 ${km.toFixed(1)} km`;
 }
 
 function closePanel() { document.getElementById('panel').classList.remove('open'); }
@@ -404,22 +539,37 @@ function closePanel() { document.getElementById('panel').classList.remove('open'
 function doFilter(f, el) {
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
+  // 激活色：用 chip 自己的 dataset 颜色
+  const color = el.style.getPropertyValue('--active-color');
+  if (color) el.style.background = color;
   closePanel();
+
   let count = 0;
   markerObjs.forEach(m => {
     const l = m._data;
-    const show =
-      f === 'all' ? true :
-      f === '7k' ? (l.price && l.price <= 7000) :
-      f === 'xhs' ? l.platform === '小红书' :
-      f === 'douban' ? l.platform === '豆瓣' :
-      l.area === f;
+    let show = false;
+    if (f === 'all') show = true;
+    else if (f.startsWith('price:')) {
+      const cap = parseInt(f.slice(6), 10);
+      show = l.price && l.price <= cap;
+    } else if (f.startsWith('platform:')) {
+      show = l.platform === f.slice(9);
+    } else {
+      // 片区名匹配（精确 + 包含父区）
+      const info = RUNTIME.areas[f];
+      show = l.area === f || (info && l.area && RUNTIME.areas[l.area]?.parent === f);
+    }
     if (show) { m.show(); count++; } else m.hide();
   });
   document.getElementById('count-pill').textContent = count + ' 套';
 }
 
-map.on('click', closePanel);
+// chip 激活色：用 CSS var
+const styleEl = document.createElement('style');
+styleEl.textContent = `.chip.active { background: var(--active-color, #1d1d1f); }`;
+document.head.appendChild(styleEl);
+
+window.addEventListener('load', boot);
 </script>
 </body>
 </html>

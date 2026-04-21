@@ -1,0 +1,66 @@
+# rent-ops 高德地图配置模板
+# 复制到项目根目录 config/amap.yml 后填入你的 key。
+#
+# ⚠️ 需要两种不同类型的 Key：
+#   1. JS API Key（Web 端）：data/map-view.html 里用的那个，用于浏览器地图渲染
+#   2. Web 服务 Key：本文件配的这个，用于后端脚本（通勤查询、POI 搜索）
+#
+# 申请步骤：
+#   1. 访问 https://console.amap.com
+#   2. 应用管理 → 创建新应用 → 添加 Key
+#   3. 服务平台选「Web服务」（重要！不是 Web端 JS API）
+#   4. 复制 Key 填到下面
+#
+# 免费额度：每日 5000 次（通勤 + POI 总和）。对个人找房场景足够用。
+
+# Web 服务 API Key（必需）
+web_service_key: ""
+
+# 可选：请求失败时重试次数
+retries: 2
+
+# 可选：本地缓存文件（避免同一查询重复命中 API）
+cache_path: "data/amap-cache.json"
+
+# 可选：POI 类别权重（用于便利分计算）
+# 每个 POI 类别有 count（周边数量上限，超过按上限计）和 weight（权重）。
+# 500m 半径内搜索，高德 POI type 代码见 https://lbs.amap.com/api/webservice/download
+convenience:
+  radius_m: 500
+  categories:
+    supermarket:
+      name: 超市
+      type: "060200"
+      weight: 2.0
+      cap_count: 5
+    convenience:
+      name: 便利店
+      type: "060201"
+      weight: 1.5
+      cap_count: 5
+    restaurant:
+      name: 餐饮
+      type: "050000"
+      weight: 1.5
+      cap_count: 20
+    metro:
+      name: 地铁站
+      type: "150500"
+      weight: 3.0
+      cap_count: 1
+      max_radius_m: 800        # 地铁用更大半径，8 分钟步行圈
+    hospital:
+      name: 医院
+      type: "090100"
+      weight: 1.0
+      cap_count: 2
+    market:
+      name: 菜市场
+      type: "060100"
+      weight: 1.2
+      cap_count: 2
+    gym:
+      name: 健身房
+      type: "080100"
+      weight: 0.8
+      cap_count: 2

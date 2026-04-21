@@ -1,11 +1,18 @@
-# rent-ops 平台抓取配置
-# 复制到项目根目录 platforms.yml 并根据需要启用/禁用平台
+# rent-ops 平台抓取配置（模板）
+# 复制到项目根目录 platforms.yml 后可按需启用/禁用平台。
+#
+# URL 占位符（由 scripts/lib/city.py 解析）：
+#   {city_code}     平台子域代码，如 sz/bj/sh/gz/hz/cd（从 cities/{pinyin}.yml 的 code 字段读）
+#   {city_pinyin}   城市拼音
+#   {city_name}     城市中文名
+#
+# 豆瓣小组 ID 在 cities/{pinyin}.yml 的 douban.group_id 配置，不再在此处写死。
 
 platforms:
   beike:
     name: 贝壳找房
     enabled: true
-    scan_url: "https://sz.ke.com/zufang/"
+    scan_url: "https://{city_code}.ke.com/zufang/"
     cookie_domain: .ke.com
     strategy:
       - cookie_playwright
@@ -14,7 +21,7 @@ platforms:
   ziroom:
     name: 自如
     enabled: true
-    scan_url: "https://sz.ziroom.com/z/"
+    scan_url: "https://www.ziroom.com/z/{city_code}/"
     cookie_domain: .ziroom.com
     strategy:
       - cookie_playwright
@@ -22,7 +29,7 @@ platforms:
   douban:
     name: 豆瓣租房
     enabled: true
-    scan_query: "site:douban.com {city}租房 {keywords}"
+    scan_query: "site:douban.com {city_name}租房 {keywords}"
     strategy:
       - scraper
       - websearch
@@ -30,15 +37,30 @@ platforms:
   xiaohongshu:
     name: 小红书
     enabled: true
-    scan_query: "site:xiaohongshu.com {city}租房 {keywords}"
+    scan_query: "site:xiaohongshu.com {city_name}租房 {keywords}"
     strategy:
       - scraper
       - websearch
 
+  anjuke:
+    name: 安居客
+    enabled: true
+    scan_url: "https://{city_code}.zu.anjuke.com/fangyuan/"
+    cookie_domain: .anjuke.com
+    strategy:
+      - cookie_playwright
+
+  fangtianxia:
+    name: 房天下
+    enabled: true
+    scan_url: "https://{city_code}.zu.fang.com/"
+    strategy:
+      - cookie_playwright
+
   58:
     name: 58同城
     enabled: false
-    scan_url: "https://sz.58.com/zufang/"
+    scan_url: "https://{city_code}.58.com/zufang/"
     cookie_domain: .58.com
     strategy:
       - cookie_playwright
@@ -50,14 +72,3 @@ platforms:
     cookie_domain: .xianyu.com
     strategy:
       - cookie_playwright
-
-filters:
-  keywords_positive:
-    - 整租
-    - 独卫
-    - 近地铁
-  keywords_negative:
-    - 隔断
-    - 限女
-    - 仅短租
-    - 床位

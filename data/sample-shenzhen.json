@@ -1,0 +1,21 @@
+[
+  { "name": "弘都世纪公寓", "platform": "安居客", "area": "后海", "pos": [113.9378, 22.5268], "price": 7100, "rooms": "2室2厅", "size": "68㎡", "metro": "湾厦站", "desc": "精装 近育才四小", "url": null, "rec": true },
+  { "name": "弘都世纪公寓", "platform": "安居客", "area": "后海", "pos": [113.9382, 22.5270], "price": 7300, "rooms": "2室2厅", "size": "68㎡", "metro": "湾厦站", "desc": "蛇口海域地铁旁精装复式两房", "url": null, "rec": false },
+  { "name": "天海花园", "platform": "安居客", "area": "后海", "pos": [113.9437, 22.5295], "price": 7500, "rooms": "3室2厅", "size": "90㎡", "metro": "后海", "desc": "免中介费 空房 粤琴一路22号", "url": null, "rec": false },
+  { "name": "天海花园", "platform": "安居客", "area": "后海", "pos": [113.9441, 22.5299], "price": 7000, "rooms": "3室2厅", "size": "92㎡", "metro": "后海", "desc": "92平三房", "url": null, "rec": false },
+  { "name": "海洋之心", "platform": "安居客", "area": "后海", "pos": [113.9498, 22.5342], "price": 7900, "rooms": "3室2厅", "size": "89㎡", "metro": "后海站", "desc": "带独立露台 3大阳台 采光好", "url": null, "rec": false },
+  { "name": "招商名仕花园", "platform": "房天下", "area": "后海", "pos": [113.9318, 22.5215], "price": 6500, "rooms": "2室2厅", "size": "80㎡", "metro": "登良站498m", "desc": "南北通透 全配 首次放租", "url": "https://sz.zu.fang.com/chuzu/3_247179561_1.htm", "rec": true },
+  { "name": "观海台", "platform": "房天下", "area": "后海", "pos": [113.9421, 22.5315], "price": 8000, "rooms": "2室2厅", "size": "82㎡", "metro": "后海站444m", "desc": "精装朝南 近海岸城", "url": "https://sz.zu.fang.com/chuzu/3_243445669_1.htm", "rec": false },
+  { "name": "后海花园", "platform": "房天下", "area": "后海", "pos": [113.9258, 22.5180], "price": 5000, "rooms": "2室1厅", "size": "84㎡", "metro": "南油站704m", "desc": "东南朝向 性价比", "url": "https://sz.zu.fang.com/chuzu/8_1006544129_1.htm", "rec": false },
+  { "name": "瑞铧苑", "platform": "房天下", "area": "后海", "pos": [113.9308, 22.5228], "price": 6400, "rooms": "2室2厅", "size": "56㎡", "metro": "登良站638m", "desc": "朝南", "url": "https://sz.zu.fang.com/chuzu/8_1008028613_1.htm", "rec": false },
+  { "name": "后海名苑居", "platform": "房天下", "area": "后海", "pos": [113.9468, 22.5308], "price": 6800, "rooms": "2室2厅", "size": "81㎡", "metro": "后海", "desc": "东南朝向", "url": "https://sz.zu.fang.com/chuzu/8_1005932870_1.htm", "rec": false },
+  { "name": "云海天城世家", "platform": "房天下", "area": "后海", "pos": [113.9272, 22.5190], "price": 6930, "rooms": "2室1厅", "size": "75㎡", "metro": "南油站719m", "desc": "朝西", "url": "https://sz.zu.fang.com/chuzu/8_1008342883_1.htm", "rec": false },
+  { "name": "漾日湾畔", "platform": "房天下", "area": "后海", "pos": [113.9432, 22.5328], "price": 8000, "rooms": "2室2厅", "size": "74㎡", "metro": "后海站311m", "desc": "朝西", "url": "https://sz.zu.fang.com/chuzu/8_1008305517_1.htm", "rec": false },
+  { "name": "海境界家园", "platform": "小红书", "area": "后海", "pos": [113.9362, 22.5256], "price": null, "rooms": "2室2厅", "size": "74㎡", "metro": "湾厦站600m", "desc": "全南朝向双阳台 业主直租免中介", "direct": true, "url": "https://www.xiaohongshu.com/explore/6693c62d0000000025014056", "rec": true },
+  { "name": "前海时代", "platform": "安居客", "area": "前海", "pos": [113.8988, 22.5168], "price": 8000, "rooms": "2室2厅", "size": "87㎡", "metro": "前海", "desc": "南北通透 客厅出阳台", "url": null, "rec": false },
+  { "name": "前海花园", "platform": "安居客", "area": "前海", "pos": [113.8936, 22.5398], "price": 7800, "rooms": "3室2厅", "size": "93㎡", "metro": "前海", "desc": "精装南向 家电齐全", "url": null, "rec": false },
+  { "name": "中爱花园", "platform": "安居客", "area": "科技园", "pos": [113.9305, 22.5733], "price": 6500, "rooms": "2室2厅", "size": "77㎡", "metro": "龙珠七路", "desc": "南向正规大两房 地铁口", "url": null, "rec": false },
+  { "name": "麒麟花园", "platform": "安居客", "area": "科技园", "pos": [113.9238, 22.5465], "price": 6250, "rooms": "2室1厅", "size": "70㎡", "metro": "南头", "desc": "电梯两房 南北通透", "url": null, "rec": false },
+  { "name": "京基御景峯", "platform": "安居客", "area": "科技园", "pos": [113.9725, 22.5985], "price": 6800, "rooms": "3室2厅", "size": "90㎡", "metro": "北站", "desc": "精装 近北站 车位充足", "url": null, "rec": false },
+  { "name": "西湖林语", "platform": "安居客", "area": "科技园", "pos": [113.9668, 22.5925], "price": 7200, "rooms": "3室2厅", "size": "79㎡", "metro": "大学城", "desc": "精装修全齐拎包入住", "url": null, "rec": false }
+]

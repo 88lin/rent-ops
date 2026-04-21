@@ -108,12 +108,13 @@ WebFetch(url="{scan_url}", prompt="提取所有房源列表项，包括：标题
 ### 各平台特殊处理
 
 **贝壳找房 (ke.com)：**
-- 列表页 URL 格式：`https://{city}.ke.com/zufang/`
+- 列表页 URL 格式：`https://{city_code}.ke.com/zufang/`
+- `{city_code}` 在 platforms.yml 里模板化，取值来自 `cities/{pinyin}.yml` 的 `code` 字段（深圳=sz、北京=bj、上海=sh、广州=gz、杭州=hz、成都=cd 等）
 - 筛选参数拼接在 URL 路径中（区域、价格、户型）
-- 房源链接格式：`https://{city}.ke.com/zufang/{id}.html`
+- 房源链接格式：`https://{city_code}.ke.com/zufang/{id}.html`
 
 **自如 (ziroom.com)：**
-- 列表页 URL 格式：`https://{city}.ziroom.com/z/`
+- 列表页 URL 格式：`https://www.ziroom.com/z/{city_code}/`
 - 自如房源多为自营，信息标准化程度高
 - 注意区分「整租」和「合租」tab
 
@@ -140,7 +141,8 @@ ${CLAUDE_SKILL_DIR}/scripts/python.sh ${CLAUDE_SKILL_DIR}/scripts/scrape_douban.
 ```
 
 - 优先尝试 CDP 模式（接管 Arc 浏览器），降级为 playwright-stealth + Arc cookie 注入
-- 自动翻页浏览「深圳租房」小组最新帖子
+- 目标小组 = `${CLAUDE_SKILL_DIR}/cities/{profile.city}.yml` 的 `douban.group_id`（深圳 613105、其他城市同字段）
+- 区域正则由 `cities/{pinyin}.yml` 的 `areas` + `sub_areas` 自动生成
 - 触发 misc/sorry 验证页时暂停等待人工过滑块
 - 输出：`${CLAUDE_SKILL_DIR}/data/douban_raw.jsonl` + `${CLAUDE_SKILL_DIR}/data/douban_filtered.jsonl`
 - 依赖：运行 `${CLAUDE_SKILL_DIR}/scripts/setup.sh` 安装
@@ -184,7 +186,8 @@ cd ~/code/MediaCrawler && /opt/homebrew/bin/python3.11 main.py --platform xhs --
 
 1. 构建搜索 query：
    - 从 `${CLAUDE_SKILL_DIR}/platforms.yml` 读取 `scan_query` 模板
-   - 替换 `{city}` 为 profile.yml 中的城市
+   - 替换 `{city_name}` 为 profile.yml 中的 `city` 字段（中文名）
+   - 替换 `{city_code}` 为 `cities/{pinyin}.yml` 的 `code` 字段（如 sz/bj）
    - 替换 `{keywords}` 为 filters.keywords_positive 中的关键词
 
 2. 执行 WebSearch

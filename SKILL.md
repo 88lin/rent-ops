@@ -115,7 +115,8 @@ ${CLAUDE_SKILL_DIR}/scripts/doctor.sh
 | 依赖 | 用途 | 安装 |
 |------|------|------|
 | MediaCrawler | 小红书爬虫 | `git clone https://github.com/NanmiCoder/MediaCrawler` + `pip install -r requirements.txt`（需 Python 3.11）|
-| 高德地图 API Key | 地图可视化 + POI 搜索 | 在 [console.amap.com](https://console.amap.com) 注册，创建「Web端(JS API)」类型的 Key |
+| 高德地图 JS API Key | 地图可视化（浏览器） | [console.amap.com](https://console.amap.com) → 创建「Web端(JS API)」Key，填入 `data/map-view.html` |
+| 高德地图 Web 服务 Key | **通勤 + 便利维度硬数据**（通勤分钟数、POI 密度） | [console.amap.com](https://console.amap.com) → 创建「Web服务」Key（不同于 JS API），复制 `templates/amap.example.yml` 到 `config/amap.yml` 填 `web_service_key`。每日 5000 次免费 |
 | Arc 浏览器 | CDP 模式（最强反检测） | [arc.net](https://arc.net) |
 
 ---
@@ -138,20 +139,25 @@ ${CLAUDE_SKILL_DIR}/scripts/doctor.sh
 如果 `config/profile.yml` 缺失，询问：
 
 > "我需要了解你的租房需求，帮你配置一下：
-> - 你在哪个城市？工作地点在哪？（地铁站或地址）
+> - 你在哪个城市？（内置：深圳 / 北京 / 上海 / 广州 / 杭州 / 成都；其他按 `${CLAUDE_SKILL_DIR}/cities/README.md` 补一份）
+> - 工作地点在哪？（地铁站、小区或详细地址，任意格式）
 > - 预算范围？
 > - 整租还是合租？偏好什么户型？
 > - 有什么绝对不能接受的？（红线）
 > - 还有什么特别在意的？"
 
-根据回答生成 `${CLAUDE_SKILL_DIR}/config/profile.yml`。
+根据回答生成 `${CLAUDE_SKILL_DIR}/config/profile.yml`。`city` 字段可填中文名（深圳）或拼音（shenzhen）。
+
+若用户城市不在内置列表里，引导用户：
+1. 复制 `cities/shenzhen.yml` 为 `cities/{pinyin}.yml`
+2. 按 `cities/README.md` 填 `code`（平台子域）/ `douban.group_id` / 主要 `areas`
 
 ### Step 2: 平台配置（推荐）
 如果 `platforms.yml` 缺失：
 
-> "我会配置常用的租房平台（贝壳、自如、豆瓣、小红书）。你主要用哪些平台找房？需要调整吗？"
+> "我会配置常用的租房平台（贝壳、自如、豆瓣、小红书、安居客、房天下、58）。所有 URL 都已模板化，会按 profile.yml 里的 city 自动适配。"
 
-从 `${CLAUDE_SKILL_DIR}/templates/platforms.example.yml` 复制到 `${CLAUDE_SKILL_DIR}/platforms.yml`。根据用户城市调整 scan_url 中的城市代码（深圳=sz、北京=bj、上海=sh、广州=gz）。
+从 `${CLAUDE_SKILL_DIR}/templates/platforms.example.yml` 复制到 `${CLAUDE_SKILL_DIR}/platforms.yml`。**不要再手动改 URL**，`{city_code}` 占位符由 `scripts/lib/city.py` 解析。
 
 ### Step 3: Tracker 初始化
 如果 `data/listings.md` 不存在，创建空 tracker：
@@ -199,17 +205,25 @@ ${CLAUDE_SKILL_DIR}/scripts/doctor.sh
 
 | 文件 | 路径 | 功能 |
 |------|------|------|
-| 用户配置 | `config/profile.yml` | 筛选条件和偏好 |
+| 用户配置 | `config/profile.yml` | 筛选条件和偏好（含 `city`） |
 | 用户画像 | `modes/_profile.md` | 自由文本个人画像 |
+| 城市配置 | `cities/*.yml` | 每城一份：code、豆瓣组、片区、坐标 |
+| 城市 loader | `scripts/lib/city.py` | 读 profile + 加载 city yml |
+| 运行时生成 | `scripts/build_city_runtime.py` | 生成 `data/city-runtime.json`（地图用） |
+| 高德 API 配置 | `config/amap.yml` | Web 服务 Key + POI 类别权重 |
+| 高德客户端 | `scripts/lib/amap.py` | geocode / POI / 路径规划 |
+| 高德查询 CLI | `scripts/amap_query.py` | 通勤 / POI / 便利分（agent 调用） |
 | 房源跟踪表 | `data/listings.md` | single source of truth |
 | 待评估队列 | `data/pipeline.md` | 扫描后待评估 |
 | 扫描历史 | `data/scan-history.tsv` | 去重用 |
-| 平台配置 | `platforms.yml` | 抓取配置 |
+| 平台配置 | `platforms.yml` | 抓取配置（URL 里用 `{city_code}` 模板） |
+| 地图运行时 | `data/city-runtime.json` | 合并 profile + city yml，map 消费 |
 | 地图数据 | `data/listings.json` | 结构化数据（地图用） |
-| 地图页面 | `data/map-view.html` | 高德地图可视化 |
+| 地图页面 | `data/map-view.html` | 高德地图可视化（数据驱动，不写死城市） |
+| 深圳示例数据 | `data/sample-shenzhen.json` | city=shenzhen 且无 listings.json 时兜底 |
 | 豆瓣原始数据 | `data/douban_raw.jsonl` | 爬取原始数据 |
 | 豆瓣筛选数据 | `data/douban_filtered.jsonl` | 筛选后数据 |
-| 豆瓣爬虫 | `scripts/scrape_douban.py` | stealth/CDP 模式 |
+| 豆瓣爬虫 | `scripts/scrape_douban.py` | 支持 `--city`；默认读 profile.yml |
 | 评估报告 | `reports/` | 每套房源的评估报告 |
 
 所有路径相对于 `${CLAUDE_SKILL_DIR}/`。

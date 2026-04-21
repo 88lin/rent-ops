@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 """
-豆瓣租房小组爬虫 v2
-- 搜索「深圳租房」小组 (ID: 613105) 中的整租房源帖子
+豆瓣租房小组爬虫 v3 — 多城市
+- 按 config/profile.yml 的 city 字段或 --city 参数选择目标小组
+- 小组 ID + 区域正则 来源：cities/{pinyin}.yml
 - 优先 CDP 接管你真实的 Arc 浏览器（最强反检测）
 - 降级：playwright-stealth + Arc cookie 注入
 - 若仍触发 misc/sorry：暂停等你手动过验证，再继续
 - 输出：data/douban_raw.jsonl（每行一条帖子）
 
 使用方法：
-  正常模式（自动尝试 CDP → stealth → 手动）：
+  默认（读 config/profile.yml 的 city，自动尝试 CDP → stealth → 手动）：
     python3 scripts/scrape_douban.py
+
+  指定城市：
+    python3 scripts/scrape_douban.py --city beijing
+    python3 scripts/scrape_douban.py --city 北京
 
   强制 CDP 模式（需要先启动 Arc 并开启调试端口）：
     /Applications/Arc.app/Contents/MacOS/Arc --remote-debugging-port=9222
@@ -32,6 +37,15 @@ import sys
 import argparse
 from datetime import datetime
 from pathlib import Path
+
+# 让 scripts/lib 可以被 import（支持 `python scripts/scrape_douban.py` 直接运行）
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.lib.city import (
+    active_city,
+    load_city,
+    build_area_regex,
+    CityNotFoundError,
+)
 
 
 def is_interactive():
@@ -59,12 +73,15 @@ except ImportError:
     sys.exit(1)
 
 # ── 配置 ──────────────────────────────────────────────────────────────────────
-GROUP_ID = "613105"  # 深圳租房小组
 CDP_PORT = 9222
 
+# 整租 / 排除正则是全局通用的（与城市无关）
 INCLUDE_RE = re.compile(r"整租|整套|两室|两房|2室|2房|两卧|大两房")
 EXCLUDE_RE = re.compile(r"次卧|主卧|单间|合租|床位|隔断|短租|日租|仅限女|隔断间")
-AREA_RE    = re.compile(r"后海|南山|南油|前海|科技园|深圳湾|桃源|蛇口|湾厦|登良")
+
+# GROUP_ID 和 AREA_RE 由城市配置动态生成（见 main()）
+GROUP_ID: str = ""
+AREA_RE: "re.Pattern[str]" = re.compile(r"^(?!.*)")  # 占位；main() 中重新赋值
 
 OUTPUT_PATH = Path(__file__).parent.parent / "data" / "douban_raw.jsonl"
 SESSION_PATH = Path(__file__).parent.parent / "data" / "douban_session.json"
@@ -317,12 +334,36 @@ async def main():
                         help="从 JSON 文件加载豆瓣 cookie（格式见 README）")
     parser.add_argument("--session-file", type=str,
                         help="从 Playwright storage state 文件加载登录态")
+    parser.add_argument("--city", type=str,
+                        help="城市名或拼音（如 shenzhen / 北京）。未指定则读 config/profile.yml")
     args = parser.parse_args()
 
     # --non-interactive 强制覆盖 is_interactive 检测
     if args.non_interactive:
         global is_interactive
         is_interactive = lambda: False
+
+    # 加载城市配置（GROUP_ID + AREA_RE）
+    global GROUP_ID, AREA_RE
+    try:
+        city = load_city(args.city) if args.city else active_city()
+    except CityNotFoundError as e:
+        print(f"✗ 城市配置错误: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    douban_cfg = city.get("douban") or {}
+    GROUP_ID = douban_cfg.get("group_id") or ""
+    if not GROUP_ID:
+        print(
+            f"✗ cities/{city['pinyin']}.yml 缺少 douban.group_id。"
+            f"去 https://www.douban.com/group/search?cat=1013&q={city['name']}租房 "
+            f"查一个填进去。",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    AREA_RE = build_area_regex(city)
+    print(f"📍 城市：{city['name']} ({city['pinyin']})  "
+          f"豆瓣组：{douban_cfg.get('group_name', GROUP_ID)} (id={GROUP_ID})")
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     seen_urls = set()
@@ -399,7 +440,8 @@ async def main():
 
         # 翻页浏览组内最新讨论
         all_topics = []
-        print(f"\n📖 翻阅「深圳租房」组最新帖子（最多 8 页）...")
+        group_label = douban_cfg.get("group_name") or f"group {GROUP_ID}"
+        print(f"\n📖 翻阅「{group_label}」组最新帖子（最多 8 页）...")
         consecutive_sorry = 0
 
         for start in range(0, 200, 25):
