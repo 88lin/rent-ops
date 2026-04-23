@@ -21,22 +21,24 @@ window._AMapSecurityConfig = { securityJsCode: 'bb2785b7b4e6c884a1051a3da144f6d9
      body-md   Inter 16/400    rounded-md 8px
   */
   :root {
-    /* surface 层级重新拉开：0b → 18 → 24 → 2e，border 能被肉眼看见 */
-    --surface: #0b1326;        /* page / outer */
-    --surface-2: #182240;      /* 面板 drawer 容器（明显 lift） */
-    --surface-3: #1f2d52;      /* 内部卡片 / hover */
-    --surface-4: #293a66;      /* active hover / 选中态 */
-    --border: #324068;         /* 所有容器边框，清晰可见 */
+    /* Slate-based surfaces — 中性灰，primary 蓝成为唯一亮点
+       仿 tailwind slate 梯度：900 → 800 → 700 → 600 */
+    --surface: #0f172a;        /* slate-900, page / outer */
+    --surface-2: #1a2234;      /* slate-800 变体，面板 drawer */
+    --surface-3: #252e44;      /* slate-700 lift，卡片 chip */
+    --surface-4: #334155;      /* slate-600，hover / active */
+    --border: #2d3748;         /* 常规边框 */
     --border-strong: #475569;  /* secondary，按钮/分隔 */
 
     --primary: #2665fd;
     --primary-hover: #4b7cff;
-    --primary-tint: rgba(38, 101, 253, 0.12);  /* CTA bg 柔化 */
+    --primary-tint: rgba(38, 101, 253, 0.12);
     --secondary: #475569;
 
-    --on-surface: #e8eefb;
-    --on-muted: #9aa8c8;
-    --on-dim: #6b7696;
+    /* 文字也切 slate，去掉蓝偏移 */
+    --on-surface: #e2e8f0;     /* slate-200 */
+    --on-muted: #94a3b8;       /* slate-400 */
+    --on-dim: #64748b;         /* slate-500 */
 
     --error: #ffb4ab;
     --success: #86efac;
@@ -49,8 +51,8 @@ window._AMapSecurityConfig = { securityJsCode: 'bb2785b7b4e6c884a1051a3da144f6d9
     --font: 'Inter', -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans",
             "Microsoft YaHei", sans-serif;
 
-    /* 半透明 tint 用于 panel/drawer 浮层（需要 backdrop-filter blur） */
-    --overlay: rgba(24, 34, 64, 0.96);
+    /* 半透明叠加层（header / filters / legend） */
+    --overlay: rgba(20, 28, 44, 0.92);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -139,23 +141,22 @@ window._AMapSecurityConfig = { securityJsCode: 'bb2785b7b4e6c884a1051a3da144f6d9
   .poi-chip.active { color: #fff; border-color: transparent; }
 
   /* ── map ─────────────────────────────────────────────────────────────── */
-  /* Amap 免费账号没有 dark 自定义样式权限。
-     技巧：把整个 map 反色 + 轻微色相旋转 → 浅色瓦片变暗。
-     markers 和 UI 叠加层再反一次 → 回到原本颜色。
-     双反互抵后，仅瓦片保持暗色。 */
+  /* Amap 免费账号没有 dark 样式权限。用 CSS 双反色：
+     #map 整体反色 + 低饱和 → 浅色瓦片变中性暗灰。
+     markers 叠加层再反一次抵消 → 回到原色。 */
   #map {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     background: var(--surface);
-    filter: invert(0.92) hue-rotate(180deg) saturate(0.7) brightness(1.02);
+    filter: invert(0.93) hue-rotate(185deg) saturate(0.45) brightness(1.0);
   }
-  /* 抵消 #map 的反色：marker 内容、信息窗口、比例尺等都需要保持原色 */
+  /* 抵消 #map 的反色：饱和度回补，让 marker 颜色正常显示 */
   .m-dot, .anchor-wrap, .poi-dot, .work-wrap,
   .amap-info-outer, .amap-marker-label, .amap-overlay-image {
-    filter: invert(0.92) hue-rotate(180deg) saturate(1.43) brightness(0.98);
+    filter: invert(0.93) hue-rotate(185deg) saturate(2.22) brightness(1.0);
   }
   .amap-copyright, .amap-logo {
-    filter: invert(0.92) hue-rotate(180deg) brightness(0.9);
-    opacity: 0.35 !important;
+    filter: invert(0.93) hue-rotate(185deg) brightness(0.9);
+    opacity: 0.3 !important;
   }
 
   /* ── anchor marker (D2) ──────────────────────────────────────────────── */
