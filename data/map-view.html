@@ -673,7 +673,8 @@ function commuteScoreClass(s) {
 
 async function boot() {
   try {
-    const r = await fetch('city-runtime.json');
+    // cache-buster：让浏览器每次都拿最新 runtime（否则 listings 改了也看不到）
+    const r = await fetch('city-runtime.json?t=' + Date.now());
     if (!r.ok) throw new Error('HTTP ' + r.status);
     RUNTIME = await r.json();
   } catch (e) {
@@ -882,7 +883,7 @@ function renderAnchors() {
 
 async function tryLoadListings(file, opts = {}) {
   try {
-    const r = await fetch(file);
+    const r = await fetch(file + '?t=' + Date.now());
     if (!r.ok) return false;
     const data = await r.json();
     if (!Array.isArray(data) || !data.length) return false;
